@@ -8,10 +8,10 @@ const CHARACTERS_DATA = [
         startingHp: 80,
         startingGold: 99,
         startingDeck: ['scratch', 'scratch', 'defend', 'defend', 'tackle'],
-        starterPokemon: ['charmander', 'squirtle', 'bulbasaur'],
+        starterPokemon: ['charmander', 'squirtle', 'bulbasaur', 'pikachu'],
         passive: {
             name: '宝可梦大师',
-            description: '所有宝可梦技能伤害 +10%'
+            description: '所有宝可梦技能伤害 +10%，所有宝可梦牌获得时额外抽一张牌'
         },
         unlockCondition: '默认解锁'
     },
@@ -23,10 +23,10 @@ const CHARACTERS_DATA = [
         startingHp: 70,
         startingGold: 150,
         startingDeck: ['scratch', 'scratch', 'scratch', 'defend', 'bite'],
-        starterPokemon: ['charmander', 'squirtle', 'bulbasaur'],
+        starterPokemon: ['charmander', 'squirtle', 'bulbasaur', 'pikachu'],
         passive: {
             name: '进攻意识',
-            description: '攻击牌伤害 +1'
+            description: '攻击牌伤害 +1，每击败一个敌人恢复 2 HP'
         },
         unlockCondition: '使用赤红通关一次'
     },
@@ -59,6 +59,21 @@ const CHARACTERS_DATA = [
             description: '初始护盾 +5，护盾效果 +25%'
         },
         unlockCondition: '使用岩石系宝可梦击败3个Boss'
+    },
+    {
+        id: 'trainer-lance',
+        name: '小拉',
+        description: '前冠军联盟成员，擅长防御型战术。',
+        sprite: '🟡',
+        startingHp: 90,
+        startingGold: 80,
+        startingDeck: ['scratch', 'defend', 'defend', 'defend', 'harden'],
+        starterPokemon: ['bulbasaur', 'squirtle', 'charmander'],
+        passive: {
+            name: '防御专家',
+            description: '初始护盾 +10，护盾效果 +15%'
+        },
+        unlockCondition: '使用防御型宝可梦击败3个Boss'
     }
 ];
 
@@ -78,12 +93,10 @@ function isCharacterUnlocked(characterId, gameState) {
     if (!character) return false;
 
     if (character.unlockCondition === '默认解锁') return true;
-
     // 这里可以根据 gameState 检查解锁条件
     // 例如：击败Boss数量、使用特定类型宝可梦等
     if (gameState && gameState.unlockedCharacters) {
         return gameState.unlockedCharacters.includes(characterId);
     }
-
     return false;
 }

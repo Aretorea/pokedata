@@ -298,6 +298,7 @@ body {
 
 .map-node.available {
     border-color: #4caf50;
+    animation: pulse-available 2s infinite;
 }
 
 .map-node.battle { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); }
@@ -311,6 +312,11 @@ body {
 @keyframes pulse {
     0%, 100% { box-shadow: 0 0 20px rgba(255, 203, 5, 0.5); }
     50% { box-shadow: 0 0 40px rgba(255, 203, 5, 0.8); }
+}
+
+@keyframes pulse-available {
+    0%, 100% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); }
+    50% { box-shadow: 0 0 25px rgba(76, 175, 80, 0.8); }
 }
 
 .deck-info {
@@ -347,6 +353,15 @@ body {
     font-weight: bold;
 }
 
+/* 敌人意图 */
+.enemy-intent {
+    margin-top: 10px;
+    padding: 5px 15px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    display: inline-block;
+}
+
 .battle-area {
     flex-grow: 1;
     display: flex;
@@ -362,6 +377,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 10px;
+    position: relative;
 }
 
 #enemy-area {
@@ -418,7 +434,21 @@ body {
 .status-paralysis { background: #f8d030; color: #333; }
 .status-sleep { background: #705898; }
 .status-freeze { background: #98d8d8; color: #333; }
-.status-shield { background: #b8b8d0; color: #333; }
+
+/* 护盾显示 */
+.shield-badge {
+    background: linear-gradient(135deg, #b8b8d0 0%, #9090a8 100%);
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+#player-shield-display,
+#enemy-shield-display {
+    margin-top: 5px;
+}
 
 .player-info {
     width: 100%;
@@ -512,6 +542,12 @@ body {
     margin-bottom: 20px;
 }
 
+.shop-gold {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #ffcb05;
+}
+
 /* 游戏结束 */
 #game-over-screen {
     justify-content: center;
@@ -534,6 +570,7 @@ body {
     padding: 20px;
     border-radius: 10px;
     margin-bottom: 30px;
+    line-height: 1.8;
 }
 
 /* 游戏说明 */
@@ -584,6 +621,16 @@ body {
         height: 100px;
         font-size: 3rem;
     }
+
+    .map-node {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+
+    .map-floor {
+        gap: 30px;
+    }
 }
 
 /* 动画效果 */
@@ -614,6 +661,7 @@ body {
     color: #ff6b6b;
     animation: damageFloat 1s ease forwards;
     pointer-events: none;
+    z-index: 100;
 }
 
 @keyframes damageFloat {
@@ -623,4 +671,43 @@ body {
 
 .heal-number {
     color: #4caf50;
+}
+
+/* 商店物品特殊样式 */
+#shop-items .card {
+    position: relative;
+}
+
+#shop-items .card-cost {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+}
+
+/* 移除卡牌对话框样式 */
+.remove-card-dialog-overlay .card {
+    min-height: 180px;
+    min-width: 120px;
+    max-width: 150px;
+}
+
+/* 事件对话框样式 */
+.event-dialog-overlay,
+.confirm-dialog-overlay {
+    animation: fadeIn 0.3s ease;
+}
+
+.event-dialog button:hover,
+.confirm-dialog button:hover {
+    transform: scale(1.05);
+}
+
+/* 消息样式 */
+.game-message {
+    animation: messageFade 1.5s ease forwards;
+}
+
+@keyframes messageFade {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
 }

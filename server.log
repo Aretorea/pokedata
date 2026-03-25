@@ -1,0 +1,11 @@
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /styles.css HTTP/1.1" 304 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /js/ui.js HTTP/1.1" 304 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /js/pokemon-card-system.js HTTP/1.1" 200 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /data/cards-data.js HTTP/1.1" 304 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /data/pokemon-data.js HTTP/1.1" 304 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /data/enemies-data.js HTTP/1.1" 304 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /js/map.js HTTP/1.1" 304 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /data/characters-data.js HTTP/1.1" 200 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /js/game.js HTTP/1.1" 304 -
+127.0.0.1 - - [20/Mar/2026 08:10:46] "GET /js/battle.js HTTP/1.1" 304 -

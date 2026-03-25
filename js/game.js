@@ -12,6 +12,7 @@ const GameState = {
         gold: 0,
         shield: 0,
         pokemon: null,  // 当前宝可梦
+        pokemonCards: [], // 宝可梦牌组（用于排序和自动变身）
         deck: [],       // 完整牌组
         hand: [],       // 手牌
         drawPile: [],   // 抽牌堆
@@ -140,6 +141,13 @@ function startNewGame(characterId) {
 
     // 创建初始牌组
     GameState.player.deck = character.startingDeck.map(cardId => getCardById(cardId)).filter(c => c);
+    
+    // 添加初始宝可梦变身牌
+    if (GameState.player.starterPokemonCard) {
+        GameState.player.deck.push(GameState.player.starterPokemonCard);
+        delete GameState.player.starterPokemonCard; // 清理临时数据
+    }
+    
     GameState.player.drawPile = [...GameState.player.deck];
     GameState.player.hand = [];
     GameState.player.discardPile = [];

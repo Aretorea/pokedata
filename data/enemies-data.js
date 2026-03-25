@@ -57,6 +57,34 @@ const ENEMIES_DATA = {
             ],
             pattern: ['attack', 'attack', 'attack'],
             goldReward: [5, 8]
+        },
+        {
+            id: 'zubat',
+            name: '超音蝠',
+            types: ['poison', 'flying'],
+            hp: 35,
+            maxHp: 35,
+            sprite: '🦇',
+            moves: [
+                { name: '超音波', effect: 'confusion', intent: 'debuff' },
+                { name: '咬住', damage: 5, intent: 'attack' }
+            ],
+            pattern: ['debuff', 'attack', 'attack'],
+            goldReward: [5, 9]
+        },
+        {
+            id: 'paras',
+            name: '派拉斯',
+            types: ['bug', 'grass'],
+            hp: 38,
+            maxHp: 38,
+            sprite: '🦀',
+            moves: [
+                { name: '抓', damage: 4, intent: 'attack' },
+                { name: '孢子', effect: 'sleep', intent: 'debuff' }
+            ],
+            pattern: ['attack', 'attack', 'debuff'],
+            goldReward: [6, 10]
         }
     ],
 
@@ -121,6 +149,36 @@ const ENEMIES_DATA = {
             ],
             pattern: ['attack', 'attack', 'defend'],
             goldReward: [11, 16]
+        },
+        {
+            id: 'golbat',
+            name: '大嘴蝠',
+            types: ['poison', 'flying'],
+            hp: 68,
+            maxHp: 68,
+            sprite: '🦇',
+            moves: [
+                { name: '吸血', damage: 6, leech: true, intent: 'attack' },
+                { name: '剧毒牙', damage: 5, effect: 'poison', intent: 'attack' },
+                { name: '超音波', effect: 'confusion', intent: 'debuff' }
+            ],
+            pattern: ['attack', 'attack', 'debuff'],
+            goldReward: [12, 17]
+        },
+        {
+            id: 'parasect',
+            name: '派拉斯特',
+            types: ['bug', 'grass'],
+            hp: 72,
+            maxHp: 72,
+            sprite: '🍄',
+            moves: [
+                { name: '十字剪', damage: 12, intent: 'attack' },
+                { name: '蘑菇孢子', effect: 'sleep', intent: 'debuff' },
+                { name: '吸血', damage: 5, leech: true, intent: 'attack' }
+            ],
+            pattern: ['attack', 'debuff', 'attack'],
+            goldReward: [13, 18]
         }
     ],
 
@@ -170,6 +228,51 @@ const ENEMIES_DATA = {
             ],
             pattern: ['attack', 'attack', 'debuff'],
             goldReward: [22, 30]
+        },
+        {
+            id: 'dragonite',
+            name: '快龙',
+            types: ['dragon', 'flying'],
+            hp: 100,
+            maxHp: 100,
+            sprite: '🐉',
+            moves: [
+                { name: '龙之怒', damage: 18, intent: 'attack' },
+                { name: '暴风', damage: 12, hits: 2, intent: 'attack' },
+                { name: '龙之舞', effect: 'strengthen', intent: 'buff' }
+            ],
+            pattern: ['attack', 'attack', 'buff'],
+            goldReward: [25, 35]
+        },
+        {
+            id: 'tyranitar',
+            name: '班基拉斯',
+            types: ['rock', 'dark'],
+            hp: 120,
+            maxHp: 120,
+            sprite: '🦖',
+            moves: [
+                { name: '咬碎', damage: 15, intent: 'attack' },
+                { name: '地震', damage: 20, intent: 'attack' },
+                { name: '沙暴', effect: 'sandstorm', intent: 'buff' }
+            ],
+            pattern: ['attack', 'buff', 'attack'],
+            goldReward: [28, 38]
+        },
+        {
+            id: 'garchomp',
+            name: '烈咬陆鲨',
+            types: ['dragon', 'ground'],
+            hp: 110,
+            maxHp: 110,
+            sprite: '🦈',
+            moves: [
+                { name: '龙爪', damage: 14, intent: 'attack' },
+                { name: '地震', damage: 18, intent: 'attack' },
+                { name: '剑舞', effect: 'strengthen', intent: 'buff' }
+            ],
+            pattern: ['attack', 'attack', 'buff'],
+            goldReward: [26, 36]
         }
     ],
 
@@ -225,6 +328,40 @@ const ENEMIES_DATA = {
             ],
             pattern: ['attack', 'attack', 'attack', 'buff'],
             goldReward: [40, 55]
+        },
+        {
+            id: 'lapras',
+            name: '乘龙',
+            types: ['water', 'ice'],
+            hp: 130,
+            maxHp: 130,
+            sprite: '🐋',
+            isElite: true,
+            moves: [
+                { name: '冰冻光束', damage: 14, effect: 'freeze', intent: 'attack' },
+                { name: '水炮', damage: 16, intent: 'attack' },
+                { name: '冲浪', damage: 12, intent: 'attack' },
+                { name: '守住', block: 20, intent: 'defend' }
+            ],
+            pattern: ['attack', 'attack', 'defend', 'attack'],
+            goldReward: [42, 58]
+        },
+        {
+            id: 'snorlax',
+            name: '卡比兽',
+            types: ['normal'],
+            hp: 150,
+            maxHp: 150,
+            sprite: '😴',
+            isElite: true,
+            moves: [
+                { name: '睡觉', heal: 30, intent: 'buff' },
+                { name: '泰山压顶', damage: 20, intent: 'attack' },
+                { name: '肚子大鼓', damage: 25, selfDamage: 15, intent: 'attack' },
+                { name: '哈欠', effect: 'sleep', intent: 'debuff' }
+            ],
+            pattern: ['attack', 'attack', 'debuff', 'buff'],
+            goldReward: [48, 65]
         }
     ],
 
@@ -283,6 +420,25 @@ const ENEMIES_DATA = {
             ],
             pattern: ['attack', 'attack', 'attack', 'debuff', 'debuff'],
             goldReward: [82, 102]
+        },
+        {
+            id: 'mewtwo-boss',
+            name: '超梦',
+            types: ['psychic'],
+            hp: 200,
+            maxHp: 200,
+            sprite: '🧬',
+            isBoss: true,
+            moves: [
+                { name: '精神强念', damage: 20, intent: 'attack' },
+                { name: '精神击破', damage: 30, intent: 'attack' },
+                { name: '瞬间移动', effect: 'dodge', intent: 'defend' },
+                { name: '屏障', block: 25, intent: 'defend' },
+                { name: '精神干扰', damage: 15, effect: 'confusion', intent: 'attack' },
+                { name: '自我再生', heal: 40, intent: 'buff' }
+            ],
+            pattern: ['attack', 'attack', 'defend', 'attack', 'attack', 'buff'],
+            goldReward: [120, 150]
         }
     ]
 };

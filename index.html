@@ -21,16 +21,25 @@
 
     <!-- 角色选择 -->
     <div id="character-select" class="screen">
-        <h2>选择你的初始宝可梦</h2>
+        <h2>第一步：选择你的角色</h2>
+        <p class="select-hint">每个角色拥有独特的被动能力</p>
         <div id="character-cards" class="card-grid"></div>
-        <button id="back-to-menu-btn" class="menu-btn">返回</button>
+        <div id="pokemon-select-section" style="display: none; margin-top: 30px;">
+            <h2>第二步：选择初始宝可梦</h2>
+            <p class="select-hint">宝可梦将作为变身牌加入牌组</p>
+            <div id="pokemon-cards" class="card-grid"></div>
+        </div>
+        <div class="selection-footer" style="margin-top: 30px;">
+            <button id="back-to-menu-btn" class="menu-btn">返回</button>
+            <button id="confirm-selection-btn" class="menu-btn" style="display: none; background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);">确认开始</button>
+        </div>
     </div>
 
     <!-- 地图界面 -->
     <div id="map-screen" class="screen">
         <div class="map-header">
             <div class="player-stats">
-                <span>HP: <span id="player-hp">100</span>/<span id="player-max-hp">100</span></span>
+                <span>HP: <span id="player-hp">80</span>/<span id="player-max-hp">80</span></span>
                 <span>金币: <span id="player-gold">0</span></span>
                 <span>层数: <span id="current-floor">1</span></span>
             </div>
@@ -38,6 +47,7 @@
         <div id="map-container"></div>
         <div class="deck-info">
             <button id="view-deck-btn" class="info-btn">查看牌组 (<span id="deck-count">0</span>)</button>
+            <button id="view-pokemon-btn" class="info-btn">宝可梦 (<span id="pokemon-count">0</span>/6)</button>
         </div>
     </div>
 
@@ -46,10 +56,16 @@
         <div class="battle-header">
             <div class="enemy-info">
                 <span id="enemy-name">敌人</span>
+                <div id="enemy-intent" class="enemy-intent"></div>
                 <div class="hp-bar">
                     <div id="enemy-hp-bar" class="hp-fill"></div>
                 </div>
                 <span id="enemy-hp-text">HP: 100/100</span>
+                <div id="enemy-shield-display"></div>
+                <!-- 捕捉提示 -->
+                <div id="capture-hint" class="capture-hint" style="display: none;">
+                    <span style="color: #4caf50;">可以捕捉!</span>
+                </div>
             </div>
         </div>
 
@@ -60,12 +76,15 @@
             </div>
             <div id="player-area" class="creature-area">
                 <div id="player-status" class="status-container"></div>
+                <div id="player-shield-display"></div>
                 <div id="player-sprite" class="sprite"></div>
+                <!-- 当前激活的宝可梦显示 -->
+                <div id="active-pokemon-indicator" class="active-pokemon-indicator" style="display: none;"></div>
             </div>
         </div>
 
         <div class="player-info">
-            <span id="player-pokemon-name">宝可梦</span>
+            <span id="player-pokemon-name">训练家</span>
             <div class="hp-bar">
                 <div id="player-hp-bar" class="hp-fill player-hp"></div>
             </div>
@@ -114,6 +133,15 @@
         <button id="close-deck-btn" class="menu-btn">关闭</button>
     </div>
 
+    <!-- 宝可梦查看 -->
+    <div id="pokemon-view-screen" class="screen">
+        <h2>你的宝可梦 (<span id="pokemon-view-count">0</span>/6)</h2>
+        <p class="select-hint">宝可梦牌使用后会暂时离场，使用另一只宝可梦时会返回</p>
+        <p class="select-hint" style="color: #4CAF50; font-weight: bold;">💡 排在第一位的宝可梦会在战斗开始时自动变身！拖动卡牌可调整顺序</p>
+        <div id="pokemon-view-cards" class="card-grid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+        <button id="close-pokemon-btn" class="menu-btn">关闭</button>
+    </div>
+
     <!-- 游戏说明 -->
     <div id="how-to-play-screen" class="screen">
         <div class="how-to-play-content">
@@ -121,8 +149,25 @@
             <h3>基本玩法</h3>
             <p>宝可梦塔是一款融合杀戮尖塔DBG玩法与宝可梦世界观的Roguelike卡牌游戏。</p>
 
+            <h3>角色与宝可梦</h3>
+            <p>选择角色后，再选择一只初始宝可梦。宝可梦作为变身牌加入牌组，最多可拥有6只。</p>
+            <p><strong>宝可梦牌特性：</strong></p>
+            <ul>
+                <li>使用宝可梦牌后会暂时离场</li>
+                <li>使用另一只宝可梦牌时，前一只会返回手牌</li>
+                <li>每只宝可梦都有独特的能力和属性</li>
+            </ul>
+
+            <h3>捕捉系统</h3>
+            <p>在商店购买精灵球，战斗中对低血量敌人使用可以捕捉它们！</p>
+            <ul>
+                <li>敌人HP越低，捕捉成功率越高</li>
+                <li>捕捉的宝可梦会变成新的变身牌</li>
+                <li>最多可携带6只宝可梦</li>
+            </ul>
+
             <h3>战斗系统</h3>
-            <p>每个回合开始时会抽5张牌，并恢复能量点。打出卡牌需要消耗能量。点击卡牌可以查看详情，再次点击打出。</p>
+            <p>每个回合开始时会抽5张牌，并恢复能量点。打出卡牌需要消耗能量。</p>
 
             <h3>属性克制</h3>
             <p>宝可梦的属性会影响伤害。克制属性造成2倍伤害，被克制造成0.5倍伤害。</p>
@@ -132,7 +177,8 @@
                 <li><strong>攻击牌</strong>: 造成伤害</li>
                 <li><strong>防御牌</strong>: 获得护盾</li>
                 <li><strong>技能牌</strong>: 特殊效果</li>
-                <li><strong>能量牌</strong>: 贴附能量到宝可梦</li>
+                <li><strong>能量牌</strong>: 恢复能量</li>
+                <li><strong>宝可梦牌</strong>: 变身获得特殊能力</li>
             </ul>
 
             <h3>状态异常</h3>
@@ -142,6 +188,17 @@
                 <li><strong>麻痹</strong>: 有概率无法行动</li>
                 <li><strong>睡眠</strong>: 无法行动</li>
                 <li><strong>冰冻</strong>: 无法行动</li>
+            </ul>
+
+            <h3>地图节点</h3>
+            <ul>
+                <li><strong>⚔️ 战斗</strong>: 普通敌人</li>
+                <li><strong>💀 精英</strong>: 强敌，更好的奖励</li>
+                <li><strong>👑 Boss</strong>: 每层的最终敌人</li>
+                <li><strong>🏪 商店</strong>: 购买卡牌、道具和精灵球</li>
+                <li><strong>❤️ 休息</strong>: 恢复HP</li>
+                <li><strong>❓ 事件</strong>: 随机事件</li>
+                <li><strong>📦 宝箱</strong>: 金币和卡牌</li>
             </ul>
         </div>
         <button id="close-how-to-play-btn" class="menu-btn">返回</button>
@@ -158,5 +215,6 @@
     <script src="js/battle.js"></script>
     <script src="js/map.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/pokemon-card-system.js"></script>
 </body>
 </html>

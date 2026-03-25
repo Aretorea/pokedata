@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动变身功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-case {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #test-log {
+            background: #333;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>宝可梦自动变身功能测试</h1>
+
+    <div class="test-case">
+        <h3>测试1: 检查 GameState 初始化</h3>
+        <div id="test1-result" class="test-result info">等待测试...</div>
+        <button onclick="testGameStateInit()">运行测试</button>
+    </div>
+
+    <div class="test-case">
+        <h3>测试2: 检查 PokemonCardSystem 方法</h3>
+        <div id="test2-result" class="test-result info">等待测试...</div>
+        <button onclick="testPokemonCardSystemMethods()">运行测试</button>
+    </div>
+
+    <div class="test-case">
+        <h3>测试3: 测试宝可梦排序功能</h3>
+        <div id="test3-result" class="test-result info">等待测试...</div>
+        <button onclick="testReorderFunction()">运行测试</button>
+    </div>
+
+    <div class="test-case">
+        <h3>测试4: 测试自动变身功能</h3>
+        <div id="test4-result" class="test-result info">等待测试...</div>
+        <button onclick="testAutoTransform()">运行测试</button>
+    </div>
+
+    <div class="test-case">
+        <h3>测试5: 端到端测试</h3>
+        <div id="test5-result" class="test-result info">等待测试...</div>
+        <button onclick="testEndToEnd()">运行测试</button>
+    </div>
+
+    <button onclick="runAllTests()">运行所有测试</button>
+    <button onclick="clearLog()">清除日志</button>
+
+    <h2>测试日志</h2>
+    <div id="test-log"></div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('test-log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').innerHTML = '';
+        }
+
+        function setTestResult(testId, status, message) {
+            const resultDiv = document.getElementById(testId);
+            resultDiv.className = `test-result ${status}`;
+            resultDiv.textContent = message;
+        }
+
+        function testGameStateInit() {
+            log('开始测试 GameState 初始化...');
+            try {
+                // 检查 GameState 是否存在
+                if (typeof GameState === 'undefined') {
+                    throw new Error('GameState 未定义');
+                }
+                log('✓ GameState 已定义');
+
+                // 检查 pokemonCards 数组
+                if (!GameState.player.pokemonCards) {
+                    throw new Error('pokemonCards 数组未定义');
+                }
+                log('✓ pokemonCards 数组已定义');
+
+                // 检查是否为数组
+                if (!Array.isArray(GameState.player.pokemonCards)) {
+                    throw new Error('pokemonCards 不是数组');
+                }
+                log('✓ pokemonCards 是数组');
+
+                setTestResult('test1-result', 'success', '✓ 所有检查通过！GameState 正确初始化');
+                log('测试1: 通过 ✓');
+            } catch (error) {
+                setTestResult('test1-result', 'error', `✗ 错误: ${error.message}`);
+                log(`测试1: 失败 ✗ - ${error.message}`);
+            }
+        }
+
+        function testPokemonCardSystemMethods() {
+            log('开始测试 PokemonCardSystem 方法...');
+            try {
+                // 检查 PokemonCardSystem 是否存在
+                if (typeof PokemonCardSystem === 'undefined') {
+                    throw new Error('PokemonCardSystem 未定义');
+                }
+                log('✓ PokemonCardSystem 已定义');
+
+                // 检查必需的方法
+                const requiredMethods = [
+                    'reorderPokemonCards',
+                    'getFirstPokemonCard',
+                    'autoTransformOnBattleStart',
+                    'createPokemonCard'
+                ];
+
+                for (const method of requiredMethods) {
+                    if (typeof PokemonCardSystem[method] !== 'function') {
+                        throw new Error(`方法 ${method} 不存在`);
+                    }
+                    log(`✓ 方法 ${method} 存在`);
+                }
+
+                setTestResult('test2-result', 'success', '✓ 所有方法检查通过！');
+                log('测试2: 通过 ✓');
+            } catch (error) {
+                setTestResult('test2-result', 'error', `✗ 错误: ${error.message}`);
+                log(`测试2: 失败 ✗ - ${error.message}`);
+            }
+        }
+
+        function testReorderFunction() {
+            log('开始测试排序功能...');
+            try {
+                // 创建测试宝可梦
+                const testPokemon1 = { id: 'test-1', name: '测试宝可梦1', types: ['normal'] };
+                const testPokemon2 = { id: 'test-2', name: '测试宝可梦2', types: ['fire'] };
+                const testPokemon3 = { id: 'test-3', name: '测试宝可梦3', types: ['water'] };
+
+                // 清空并添加测试数据
+                GameState.player.pokemonCards = [];
+                GameState.player.pokemonCards.push(PokemonCardSystem.createPokemonCard(testPokemon1));
+                GameState.player.pokemonCards.push(PokemonCardSystem.createPokemonCard(testPokemon2));
+                GameState.player.pokemonCards.push(PokemonCardSystem.createPokemonCard(testPokemon3));
+
+                log(`✓ 添加了 ${GameState.player.pokemonCards.length} 只测试宝可梦`);
+
+                // 测试排序
+                const originalFirst = GameState.player.pokemonCards[0].name;
+                PokemonCardSystem.reorderPokemonCards(0, 2);
+                const newFirst = GameState.player.pokemonCards[0].name;
+
+                log(`原始第一张: ${originalFirst}`);
+                log(`排序后第一张: ${newFirst}`);
+
+                if (originalFirst === newFirst) {
+                    throw new Error('排序失败，顺序未改变');
+                }
+                log('✓ 排序成功');
+
+                setTestResult('test3-result', 'success', '✓ 排序功能正常工作！');
+                log('测试3: 通过 ✓');
+
+                // 清理测试数据
+                GameState.player.pokemonCards = [];
+            } catch (error) {
+                setTestResult('test3-result', 'error', `✗ 错误: ${error.message}`);
+                log(`测试3: 失败 ✗ - ${error.message}`);
+            }
+        }
+
+        function testAutoTransform() {
+            log('开始测试自动变身功能...');
+            try {
+                // 创建测试宝可梦
+                const testPokemon = {
+                    id: 'test-auto',
+                    name: '自动变身测试',
+                    types: ['electric'],
+                    skills: [{ name: '电击', damage: 10, energy: 1 }]
+                };
+
+                // 添加到牌组
+                GameState.player.pokemonCards = [];
+                GameState.player.pokemonCards.push(PokemonCardSystem.createPokemonCard(testPokemon));
+
+                log('✓ 添加测试宝可梦');
+
+                // 设置抽牌堆
+                GameState.player.drawPile = [...GameState.player.pokemonCards];
+
+                // 测试自动变身
+                const result = PokemonCardSystem.autoTransformOnBattleStart();
+
+                if (!result) {
+                    throw new Error('自动变身失败');
+                }
+                log('✓ 自动变身成功');
+
+                // 检查是否激活了宝可梦
+                if (!PokemonCardSystem.activePokemon) {
+                    throw new Error('宝可梦未激活');
+                }
+                log('✓ 宝可梦已激活');
+
+                // 检查是否从抽牌堆移除
+                const cardInDrawPile = GameState.player.drawPile.find(c => c.id === GameState.player.pokemonCards[0].id);
+                if (cardInDrawPile) {
+                    throw new Error('宝可梦牌未从抽牌堆移除');
+                }
+                log('✓ 宝可梦牌已从抽牌堆移除');
+
+                setTestResult('test4-result', 'success', '✓ 自动变身功能正常工作！');
+                log('测试4: 通过 ✓');
+
+                // 清理
+                GameState.player.pokemonCards = [];
+                PokemonCardSystem.activePokemon = null;
+            } catch (error) {
+                setTestResult('test4-result', 'error', `✗ 错误: ${error.message}`);
+                log(`测试4: 失败 ✗ - ${error.message}`);
+            }
+        }
+
+        function testEndToEnd() {
+            log('开始端到端测试...');
+            try {
+                // 模拟完整流程
+                log('步骤1: 初始化游戏状态');
+                GameState.player.pokemonCards = [];
+                GameState.player.drawPile = [];
+
+                log('步骤2: 选择初始宝可梦');
+                const starterPokemon = {
+                    id: 'pikachu',
+                    name: '皮卡丘',
+                    types: ['electric'],
+                    skills: [
+                        { name: '电击', damage: 10, energy: 1 },
+                        { name: '十万伏特', damage: 30, energy: 2 }
+                    ]
+                };
+
+                const card = PokemonCardSystem.createPokemonCard(starterPokemon);
+                GameState.player.pokemonCards.push(card);
+                log(`✓ 添加了 ${starterPokemon.name}`);
+
+                log('步骤3: 捕捉更多宝可梦');
+                const capturedPokemon = {
+                    id: 'charmander',
+                    name: '小火龙',
+                    types: ['fire'],
+                    skills: [
+                        { name: '火花', damage: 15, energy: 1 }
+                    ]
+                };
+
+                const capturedCard = PokemonCardSystem.createPokemonCard(capturedPokemon);
+                GameState.player.pokemonCards.push(capturedCard);
+                log(`✓ 捕捉了 ${capturedPokemon.name}`);
+
+                log('步骤4: 调整宝可梦顺序');
+                PokemonCardSystem.reorderPokemonCards(1, 0);
+                log(`✓ 新的首发宝可梦: ${GameState.player.pokemonCards[0].name}`);
+
+                log('步骤5: 进入战斗，自动变身');
+                GameState.player.drawPile = [...GameState.player.pokemonCards];
+                PokemonCardSystem.autoTransformOnBattleStart();
+                log(`✓ 自动变身为: ${PokemonCardSystem.activePokemon.name}`);
+
+                log('步骤6: 验证结果');
+                if (PokemonCardSystem.activePokemon.name !== capturedPokemon.name) {
+                    throw new Error('自动变身的宝可梦不正确');
+                }
+                log('✓ 验证通过');
+
+                setTestResult('test5-result', 'success', '✓ 端到端测试成功！所有功能正常工作');
+                log('测试5: 通过 ✓');
+
+                // 清理
+                GameState.player.pokemonCards = [];
+                PokemonCardSystem.activePokemon = null;
+            } catch (error) {
+                setTestResult('test5-result', 'error', `✗ 错误: ${error.message}`);
+                log(`测试5: 失败 ✗ - ${error.message}`);
+            }
+        }
+
+        function runAllTests() {
+            log('========== 开始运行所有测试 ==========');
+            testGameStateInit();
+            testPokemonCardSystemMethods();
+            testReorderFunction();
+            testAutoTransform();
+            testEndToEnd();
+            log('========== 所有测试完成 ==========');
+        }
+
+        // 页面加载时显示提示
+        window.onload = function() {
+            log('测试页面已加载，请点击按钮开始测试');
+            log('提示：需要在游戏环境中运行，确保所有JS文件已加载');
+        };
+    </script>
+</body>
+</html>

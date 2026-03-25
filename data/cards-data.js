@@ -413,6 +413,505 @@ const CARDS_DATA = {
             pokemonType: 'normal',
             description: '随机使用一张稀有或更高稀有度的卡牌。',
             effects: [{ type: 'randomCard', rarity: ['rare', 'epic', 'legendary'] }]
+        },
+
+        // ====== 更多攻击卡 ======
+        {
+            id: 'dragon-claw',
+            name: '龙爪',
+            type: 'attack',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'dragon',
+            description: '造成 7 点伤害。',
+            effects: [{ type: 'damage', value: 7, attackType: 'dragon' }]
+        },
+        {
+            id: 'ice-beam',
+            name: '冰冻光束',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'ice',
+            description: '造成 10 点伤害。有 30% 概率使敌人冰冻。',
+            effects: [
+                { type: 'damage', value: 10, attackType: 'ice' },
+                { type: 'applyStatus', status: 'freeze', chance: 0.3 }
+            ]
+        },
+        {
+            id: 'fire-blast',
+            name: '大字爆炎',
+            type: 'attack',
+            cost: 3,
+            rarity: 'epic',
+            pokemonType: 'fire',
+            description: '造成 20 点伤害。必定使敌人灼伤。',
+            effects: [
+                { type: 'damage', value: 20, attackType: 'fire' },
+                { type: 'applyStatus', status: 'burn' }
+            ]
+        },
+        {
+            id: 'thunder',
+            name: '打雷',
+            type: 'attack',
+            cost: 3,
+            rarity: 'epic',
+            pokemonType: 'electric',
+            description: '造成 18 点伤害。有 50% 概率使敌人麻痹。',
+            effects: [
+                { type: 'damage', value: 18, attackType: 'electric' },
+                { type: 'applyStatus', status: 'paralysis', chance: 0.5 }
+            ]
+        },
+        {
+            id: 'hyper-beam',
+            name: '破坏光线',
+            type: 'attack',
+            cost: 4,
+            rarity: 'legendary',
+            pokemonType: 'normal',
+            description: '造成 35 点伤害。',
+            effects: [{ type: 'damage', value: 35 }]
+        },
+        {
+            id: 'shadow-sneak',
+            name: '影子偷袭',
+            type: 'attack',
+            cost: 0,
+            rarity: 'uncommon',
+            pokemonType: 'ghost',
+            description: '造成 3 点伤害。无视护盾。',
+            effects: [{ type: 'damage', value: 3, attackType: 'ghost', ignoreShield: true }]
+        },
+        {
+            id: 'rock-slide',
+            name: '岩石崩塌',
+            type: 'attack',
+            cost: 2,
+            rarity: 'uncommon',
+            pokemonType: 'rock',
+            description: '造成 4 点伤害，3次。',
+            effects: [{ type: 'damage', value: 4, attackType: 'rock', hits: 3 }]
+        },
+
+        // ====== 更多防御卡 ======
+        {
+            id: 'light-screen',
+            name: '光墙',
+            type: 'defense',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'psychic',
+            description: '获得 8 点护盾。抽一张牌。',
+            effects: [
+                { type: 'block', value: 8 },
+                { type: 'draw', value: 1 }
+            ]
+        },
+        {
+            id: 'reflect',
+            name: '反射壁',
+            type: 'defense',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'psychic',
+            description: '获得 15 点护盾。',
+            effects: [{ type: 'block', value: 15 }]
+        },
+        {
+            id: 'aurora-veil',
+            name: '极光幕',
+            type: 'defense',
+            cost: 2,
+            rarity: 'epic',
+            pokemonType: 'ice',
+            description: '获得 10 点护盾。本回合受到的伤害-30%。',
+            effects: [
+                { type: 'block', value: 10 },
+                { type: 'buff', buff: 'damageReduction', value: 0.3, duration: 1 }
+            ]
+        },
+
+        // ====== 更多技能卡 ======
+        {
+            id: 'swords-dance',
+            name: '剑舞',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '本回合攻击牌伤害翻倍。',
+            effects: [{ type: 'buff', buff: 'doubleDamage', duration: 1 }]
+        },
+        {
+            id: 'agility',
+            name: '高速移动',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'psychic',
+            description: '抽 2 张牌。',
+            effects: [{ type: 'draw', value: 2 }]
+        },
+        {
+            id: 'recover',
+            name: '自我再生',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '恢复 15 点HP。',
+            effects: [{ type: 'heal', value: 15 }]
+        },
+        {
+            id: 'baton-pass',
+            name: '接棒',
+            type: 'skill',
+            cost: 0,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '抽 3 张牌，然后结束回合。',
+            effects: [
+                { type: 'draw', value: 3 },
+                { type: 'endTurn' }
+            ]
+        },
+        {
+            id: 'destiny-bond',
+            name: '同命',
+            type: 'skill',
+            cost: 2,
+            rarity: 'epic',
+            pokemonType: 'ghost',
+            description: '当你受到致命伤害时，敌人也会受到相同伤害。',
+            effects: [{ type: 'buff', buff: 'destinyBond', duration: 99 }]
+        },
+
+        // ====== 新增攻击卡 ======
+        {
+            id: 'bug-buzz',
+            name: '虫鸣',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'bug',
+            description: '造成 10 点伤害。有 30% 概率使敌人混乱。',
+            effects: [
+                { type: 'damage', value: 10, attackType: 'bug' },
+                { type: 'applyStatus', status: 'confusion', chance: 0.3 }
+            ]
+        },
+        {
+            id: 'poison-jab',
+            name: '毒击',
+            type: 'attack',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'poison',
+            description: '造成 5 点伤害。有 40% 概率使敌人中毒。',
+            effects: [
+                { type: 'damage', value: 5, attackType: 'poison' },
+                { type: 'applyStatus', status: 'poison', chance: 0.4 }
+            ]
+        },
+        {
+            id: 'aqua-jet',
+            name: '水流喷射',
+            type: 'attack',
+            cost: 0,
+            rarity: 'uncommon',
+            pokemonType: 'water',
+            description: '造成 3 点伤害。',
+            effects: [{ type: 'damage', value: 3, attackType: 'water' }]
+        },
+        {
+            id: 'flare-blitz',
+            name: '闪焰冲锋',
+            type: 'attack',
+            cost: 2,
+            rarity: 'epic',
+            pokemonType: 'fire',
+            description: '造成 20 点伤害，自己受到 5 点伤害。使敌人灼伤。',
+            effects: [
+                { type: 'damage', value: 20, attackType: 'fire' },
+                { type: 'selfDamage', value: 5 },
+                { type: 'applyStatus', status: 'burn' }
+            ]
+        },
+        {
+            id: 'leaf-storm',
+            name: '飞叶风暴',
+            type: 'attack',
+            cost: 3,
+            rarity: 'epic',
+            pokemonType: 'grass',
+            description: '造成 22 点伤害。',
+            effects: [{ type: 'damage', value: 22, attackType: 'grass' }]
+        },
+        {
+            id: 'wild-charge',
+            name: '狂野伏特',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'electric',
+            description: '造成 16 点伤害，自己受到 3 点伤害。',
+            effects: [
+                { type: 'damage', value: 16, attackType: 'electric' },
+                { type: 'selfDamage', value: 3 }
+            ]
+        },
+        {
+            id: 'close-combat',
+            name: '近身战',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'fighting',
+            description: '造成 18 点伤害。本回合护盾效果-50%。',
+            effects: [
+                { type: 'damage', value: 18, attackType: 'fighting' },
+                { type: 'debuff', debuff: 'weakenShield', value: 0.5, duration: 1 }
+            ]
+        },
+        {
+            id: 'dark-pulse',
+            name: '恶之波动',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'dark',
+            description: '造成 12 点伤害。有 20% 概率使敌人畏缩。',
+            effects: [
+                { type: 'damage', value: 12, attackType: 'dark' },
+                { type: 'applyStatus', status: 'flinch', chance: 0.2 }
+            ]
+        },
+        {
+            id: 'fairy-wind',
+            name: '妖精之风',
+            type: 'attack',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'fairy',
+            description: '造成 7 点伤害。',
+            effects: [{ type: 'damage', value: 7, attackType: 'fairy' }]
+        },
+        {
+            id: 'moonblast',
+            name: '月亮之力',
+            type: 'attack',
+            cost: 3,
+            rarity: 'epic',
+            pokemonType: 'fairy',
+            description: '造成 18 点伤害。有 30% 概率降低敌人攻击。',
+            effects: [
+                { type: 'damage', value: 18, attackType: 'fairy' },
+                { type: 'debuff', debuff: 'weaken', chance: 0.3, duration: 2 }
+            ]
+        },
+
+        // ====== 新增防御卡 ======
+        {
+            id: 'acid-armor',
+            name: '溶解液',
+            type: 'defense',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'poison',
+            description: '获得 10 点护盾。抽一张牌。',
+            effects: [
+                { type: 'block', value: 10 },
+                { type: 'draw', value: 1 }
+            ]
+        },
+        {
+            id: 'cotton-guard',
+            name: '棉花防守',
+            type: 'defense',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'grass',
+            description: '获得 16 点护盾。',
+            effects: [{ type: 'block', value: 16 }]
+        },
+        {
+            id: 'bulk-up',
+            name: '健美',
+            type: 'defense',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'fighting',
+            description: '获得 6 点护盾。下张攻击牌伤害+3。',
+            effects: [
+                { type: 'block', value: 6 },
+                { type: 'buff', buff: 'damageBonus', value: 3, duration: 1 }
+            ]
+        },
+
+        // ====== 新增技能卡 ======
+        {
+            id: 'heal-bell',
+            name: '治愈铃声',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '恢复 10 HP。治愈所有状态异常。',
+            effects: [
+                { type: 'heal', value: 10 },
+                { type: 'cureStatus' }
+            ]
+        },
+        {
+            id: 'tail-whip',
+            name: '摇尾巴',
+            type: 'skill',
+            cost: 0,
+            rarity: 'common',
+            pokemonType: 'normal',
+            description: '使敌人防御降低，增加受到的伤害。',
+            effects: [{ type: 'debuff', debuff: 'vulnerable', duration: 2 }]
+        },
+        {
+            id: 'growl',
+            name: '叫声',
+            type: 'skill',
+            cost: 0,
+            rarity: 'common',
+            pokemonType: 'normal',
+            description: '使敌人攻击降低。',
+            effects: [{ type: 'debuff', debuff: 'weaken', duration: 2 }]
+        },
+        {
+            id: 'screech',
+            name: '刺耳声',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'normal',
+            description: '使敌人防御大幅降低。',
+            effects: [{ type: 'debuff', debuff: 'vulnerable', value: 2, duration: 2 }]
+        },
+        {
+            id: 'will-o-wisp',
+            name: '鬼火',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'fire',
+            description: '使敌人灼伤。',
+            effects: [{ type: 'applyStatus', status: 'burn' }]
+        },
+        {
+            id: 'thunder-wave',
+            name: '电磁波',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'electric',
+            description: '使敌人麻痹。',
+            effects: [{ type: 'applyStatus', status: 'paralysis' }]
+        },
+        {
+            id: 'spore',
+            name: '蘑菇孢子',
+            type: 'skill',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'grass',
+            description: '使敌人睡眠 3 回合。',
+            effects: [{ type: 'applyStatus', status: 'sleep', duration: 3 }]
+        },
+        {
+            id: 'recover',
+            name: '自我再生',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '恢复 15 点HP。',
+            effects: [{ type: 'heal', value: 15 }]
+        },
+        {
+            id: 'soft-boiled',
+            name: '生蛋',
+            type: 'skill',
+            cost: 2,
+            rarity: 'epic',
+            pokemonType: 'normal',
+            description: '恢复 20 HP。',
+            effects: [{ type: 'heal', value: 20 }]
+        },
+        {
+            id: 'nasty-plot',
+            name: '诡计',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'dark',
+            description: '下张攻击牌伤害+15。',
+            effects: [{ type: 'buff', buff: 'damageBonus', value: 15, duration: 1 }]
+        },
+        {
+            id: 'calm-mind',
+            name: '冥想',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'psychic',
+            description: '获得 5 点护盾。抽一张牌。',
+            effects: [
+                { type: 'block', value: 5 },
+                { type: 'draw', value: 1 }
+            ]
+        },
+        {
+            id: 'wish',
+            name: '祈愿',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '下回合开始时恢复 12 HP。',
+            effects: [{ type: 'buff', buff: 'wish', value: 12, duration: 2 }]
+        },
+
+        // ====== 传说卡牌 ======
+        {
+            id: 'judgment',
+            name: '审判',
+            type: 'attack',
+            cost: 5,
+            rarity: 'legendary',
+            pokemonType: 'normal',
+            description: '造成 50 点伤害。',
+            effects: [{ type: 'damage', value: 50 }]
+        },
+        {
+            id: 'geomancy',
+            name: '大地掌控',
+            type: 'skill',
+            cost: 2,
+            rarity: 'legendary',
+            pokemonType: 'fairy',
+            description: '获得 3 点能量。本回合攻击牌伤害翻倍。',
+            effects: [
+                { type: 'gainEnergy', value: 3 },
+                { type: 'buff', buff: 'doubleDamage', duration: 1 }
+            ]
+        },
+        {
+            id: 'nature-s-madness',
+            name: '自然之怒',
+            type: 'attack',
+            cost: 3,
+            rarity: 'legendary',
+            pokemonType: 'grass',
+            description: '造成敌人当前HP 50%的伤害。',
+            effects: [{ type: 'damage', attackType: 'grass', percentDamage: 0.5 }]
         }
     ]
 };
