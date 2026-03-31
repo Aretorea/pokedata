@@ -14,9 +14,25 @@
             <p class="subtitle">Pokemon Tower</p>
             <div class="menu-buttons">
                 <button id="start-game-btn" class="menu-btn">开始游戏</button>
+                <button id="pokedex-btn" class="menu-btn">📚 图鉴</button>
                 <button id="how-to-play-btn" class="menu-btn">游戏说明</button>
             </div>
         </div>
+    </div>
+
+    <!-- 图鉴界面 -->
+    <div id="pokedex-screen" class="screen">
+        <h2 style="color: #ffcb05;">📚 图鉴</h2>
+        <div class="pokedex-tabs">
+            <button class="pokedex-tab active" data-tab="pokemon">🧬 宝可梦</button>
+            <button class="pokedex-tab" data-tab="skills">⚔️ 技能</button>
+            <button class="pokedex-tab" data-tab="items">📦 道具</button>
+            <button class="pokedex-tab" data-tab="relics">💎 遗物</button>
+        </div>
+        <div id="pokedex-content" class="pokedex-content">
+            <!-- 动态填充 -->
+        </div>
+        <button id="close-pokedex-btn" class="menu-btn" style="margin-top: 20px;">返回</button>
     </div>
 
     <!-- 角色选择 -->
@@ -71,11 +87,11 @@
 
         <div class="battle-area">
             <div id="enemy-area" class="creature-area">
+                <div id="enemy-status" class="status-container status-above"></div>
                 <div id="enemy-sprite" class="sprite"></div>
-                <div id="enemy-status" class="status-container"></div>
             </div>
             <div id="player-area" class="creature-area">
-                <div id="player-status" class="status-container"></div>
+                <div id="player-status" class="status-container status-above"></div>
                 <div id="player-shield-display"></div>
                 <div id="player-sprite" class="sprite"></div>
                 <!-- 当前激活的宝可梦显示 -->
@@ -85,17 +101,51 @@
 
         <div class="player-info">
             <span id="player-pokemon-name">训练家</span>
-            <div class="hp-bar">
+            <div class="hp-bar hp-bar-wide">
                 <div id="player-hp-bar" class="hp-fill player-hp"></div>
             </div>
             <span id="player-hp-text">HP: 100/100</span>
             <div class="energy-container">
                 <span>能量: <span id="current-energy">3</span>/<span id="max-energy">3</span></span>
             </div>
+            <!-- 进化进度条 -->
+            <div id="evolution-progress-container" class="evolution-progress-container" style="display: none;">
+                <div class="evolution-label">进化进度</div>
+                <div class="evolution-bar">
+                    <div id="evolution-bar-fill" class="evolution-bar-fill"></div>
+                </div>
+                <span id="evolution-progress-text" class="evolution-progress-text">0/0</span>
+            </div>
         </div>
 
         <div id="hand-container" class="hand-area">
             <div id="hand-cards" class="card-row"></div>
+        </div>
+
+        <!-- 战斗牌库信息区 -->
+        <div class="battle-deck-info">
+            <div class="deck-piles">
+                <div class="pile" id="draw-pile">
+                    <div class="pile-icon">📚</div>
+                    <div class="pile-count" id="draw-pile-count">0</div>
+                    <div class="pile-label">抽牌堆</div>
+                </div>
+                <div class="pile" id="discard-pile">
+                    <div class="pile-icon">🗑️</div>
+                    <div class="pile-count" id="discard-pile-count">0</div>
+                    <div class="pile-label">弃牌堆</div>
+                </div>
+                <div class="pile" id="exhaust-pile">
+                    <div class="pile-icon">💨</div>
+                    <div class="pile-count" id="exhaust-pile-count">0</div>
+                    <div class="pile-label">消耗区</div>
+                </div>
+            </div>
+            <!-- 已消耗道具显示 -->
+            <div class="consumed-items" id="consumed-items-container" style="display: none;">
+                <div class="consumed-label">已消耗道具:</div>
+                <div id="consumed-items-list" class="consumed-items-list"></div>
+            </div>
         </div>
 
         <div class="battle-controls">
@@ -105,17 +155,21 @@
 
     <!-- 卡牌奖励界面 -->
     <div id="reward-screen" class="screen">
-        <h2>选择一张卡牌加入牌组</h2>
-        <div id="reward-cards" class="card-grid"></div>
-        <button id="skip-reward-btn" class="menu-btn">跳过</button>
+        <div class="reward-container">
+            <h2 style="color: #ffcb05; margin-bottom: 20px;">🎉 选择一张卡牌加入牌组</h2>
+            <div id="reward-cards" class="card-grid"></div>
+            <button id="skip-reward-btn" class="menu-btn" style="margin-top: 20px;">跳过</button>
+        </div>
     </div>
 
     <!-- 商店界面 -->
     <div id="shop-screen" class="screen">
-        <h2>商店</h2>
-        <div class="shop-gold">金币: <span id="shop-gold">0</span></div>
-        <div id="shop-items" class="card-grid"></div>
-        <button id="leave-shop-btn" class="menu-btn">离开商店</button>
+        <div class="shop-container">
+            <h2 style="color: #ffcb05;">🏪 商店</h2>
+            <div class="shop-gold">💰 金币: <span id="shop-gold">0</span></div>
+            <div id="shop-items" class="card-grid"></div>
+            <button id="leave-shop-btn" class="menu-btn">离开商店</button>
+        </div>
     </div>
 
     <!-- 游戏结束 -->
@@ -140,6 +194,38 @@
         <p class="select-hint" style="color: #4CAF50; font-weight: bold;">💡 排在第一位的宝可梦会在战斗开始时自动变身！拖动卡牌可调整顺序</p>
         <div id="pokemon-view-cards" class="card-grid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
         <button id="close-pokemon-btn" class="menu-btn">关闭</button>
+    </div>
+
+    <!-- 进化选择对话框 -->
+    <div id="evolution-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-content evolution-dialog">
+            <h2>进化时刻！</h2>
+            <div class="evolution-comparison">
+                <div class="evolution-before">
+                    <h3 id="evolution-before-name">当前形态</h3>
+                    <div id="evolution-before-sprite" class="evolution-sprite">🔥</div>
+                    <div id="evolution-before-stats" class="evolution-stats"></div>
+                </div>
+                <div class="evolution-arrow">→</div>
+                <div class="evolution-after">
+                    <h3 id="evolution-after-name">进化形态</h3>
+                    <div id="evolution-after-sprite" class="evolution-sprite">🐉</div>
+                    <div id="evolution-after-stats" class="evolution-stats"></div>
+                </div>
+            </div>
+            <div class="evolution-buttons">
+                <button id="evolution-confirm-btn" class="menu-btn" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);">进化！</button>
+                <button id="evolution-skip-btn" class="menu-btn">此次不进化</button>
+                <button id="evolution-never-btn" class="menu-btn" style="background: #666;">永不进化</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遗物查看界面 -->
+    <div id="relics-screen" class="screen">
+        <h2>遗物收藏 (<span id="relics-count">0</span>)</h2>
+        <div id="relics-container" class="relics-grid"></div>
+        <button id="close-relics-btn" class="menu-btn">关闭</button>
     </div>
 
     <!-- 游戏说明 -->
@@ -209,6 +295,10 @@
     <script src="data/cards-data.js"></script>
     <script src="data/enemies-data.js"></script>
     <script src="data/characters-data.js"></script>
+    <script src="data/skill-types.js"></script>
+    <script src="data/abilities-data.js"></script>
+    <script src="data/relics-data.js"></script>
+    <script src="data/item-cards.js"></script>
 
     <!-- 游戏逻辑 -->
     <script src="js/game.js"></script>
@@ -216,5 +306,7 @@
     <script src="js/map.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/pokemon-card-system.js"></script>
+    <script src="js/pokeball-system.js"></script>
+    <script src="js/pokedex.js"></script>
 </body>
 </html>

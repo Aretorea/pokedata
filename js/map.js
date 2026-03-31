@@ -14,6 +14,45 @@ const NODE_TYPES = {
     treasure: { name: '宝箱', icon: '📦', color: '#ffcb05' }
 };
 
+// 本地获取随机卡牌奖励
+function getRandomCardRewardsLocal(count, minRarity) {
+    const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+    const minIndex = rarityOrder.indexOf(minRarity);
+    const availableCards = [];
+    
+    // 从 CARDS_DATA 获取卡牌
+    if (typeof CARDS_DATA !== 'undefined') {
+        if (CARDS_DATA.obtainable) {
+            for (const card of CARDS_DATA.obtainable) {
+                const cardRarityIndex = rarityOrder.indexOf(card.rarity);
+                if (cardRarityIndex >= minIndex) {
+                    availableCards.push(card);
+                }
+            }
+        }
+    }
+    
+    // 如果没有可用卡牌，返回基础卡牌
+    if (availableCards.length === 0) {
+        const baseCards = [
+            { id: 'scratch', name: '抓', type: 'attack', cost: 1, rarity: 'common', description: '造成 4 点伤害。', effects: [{ type: 'damage', value: 4 }] },
+            { id: 'defend', name: '防御', type: 'defense', cost: 1, rarity: 'common', description: '获得 4 点护盾。', effects: [{ type: 'block', value: 4 }] },
+            { id: 'tackle', name: '撞击', type: 'attack', cost: 1, rarity: 'common', description: '造成 5 点伤害。', effects: [{ type: 'damage', value: 5 }] }
+        ];
+        return baseCards.slice(0, count);
+    }
+    
+    // 随机选择卡牌
+    const selected = [];
+    const shuffled = [...availableCards].sort(() => Math.random() - 0.5);
+    
+    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+        selected.push({ ...shuffled[i] });
+    }
+    
+    return selected;
+}
+
 // 生成地图
 function generateMap() {
     const map = [];
@@ -294,17 +333,23 @@ function executeNodeEvent(node) {
     switch (node.type) {
         case 'battle':
             const enemy = getRandomEnemy(GameState.progress.currentFloor);
-            startBattle(enemy);
+            if (typeof startBattle === 'function') {
+                startBattle(enemy);
+            }
             break;
 
         case 'elite':
             const elite = getRandomElite();
-            startBattle(elite);
+            if (typeof startBattle === 'function') {
+                startBattle(elite);
+            }
             break;
 
         case 'boss':
             const boss = getRandomBoss();
-            startBattle(boss);
+            if (typeof startBattle === 'function') {
+                startBattle(boss);
+            }
             break;
 
         case 'shop':
@@ -522,7 +567,44 @@ function renderShop() {
     container.innerHTML = '';
     document.getElementById('shop-gold').textContent = GameState.player.gold;
 
-    // 商店物品（每次访问商店时重新生成）
+    // 初始化刷新次数
+    if (typeof GameState.shopRefreshCount === 'undefined') {
+        GameState.shopRefreshCount = 0;
+    }
+
+    // 计算刷新价格（阶梯式：首次免费，之后每次+50金币）
+    const refreshCost = GameState.shopRefreshCount === 0 ? 0 : 50 * GameState.shopRefreshCount;
+    
+    // 添加刷新按钮和遗物购买区
+    const shopHeader = document.createElement('div');
+    shopHeader.style.cssText = 'width: 100%; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;';
+    shopHeader.innerHTML = `
+        <button id="refresh-shop-btn" class="action-btn" style="background: #2196f3;">
+            🔄 刷新商店 ${refreshCost > 0 ? `(${refreshCost}💰)` : '(免费)'}
+        </button>
+        <span style="color: #aaa;">已刷新: ${GameState.shopRefreshCount}次</span>
+    `;
+    container.appendChild(shopHeader);
+
+    // 遗物购买区
+    const relicSection = document.createElement('div');
+    relicSection.style.cssText = 'width: 100%; margin: 20px 0;';
+    relicSection.innerHTML = `
+        <h3 style="color: #9c27b0; margin-bottom: 10px;">💎 遗物商店</h3>
+        <div id="relic-shop-items" class="card-grid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+    `;
+    container.appendChild(relicSection);
+
+    // 生成遗物商品
+    renderRelicShop();
+
+    // 卡牌购买区
+    const cardSectionTitle = document.createElement('h3');
+    cardSectionTitle.style.cssText = 'width: 100%; color: #ffcb05; margin: 20px 0 10px 0;';
+    cardSectionTitle.textContent = '🃏 卡牌商店';
+    container.appendChild(cardSectionTitle);
+
+    // 商店物品
     const shopItems = [
         ...getRandomCardRewards(3, { minRarity: 'uncommon' }),
         { id: 'potion-shop', name: '伤药', type: 'item', cost: 50, description: '恢复 20 HP', effect: () => healPlayer(20) },
@@ -555,7 +637,7 @@ function renderShop() {
 
         itemDiv.innerHTML = `
             <div class="card-name">${item.name}</div>
-            <div class="card-type">${item.type === 'item' ? '道具' : (CARD_TYPES ? CARD_TYPES[item.type] : item.type)}</div>
+            <div class="card-type">${item.type === 'item' ? '📦 道具' : (CARD_TYPES ? CARD_TYPES[item.type] : item.type)}</div>
             <div class="card-description">${item.description}</div>
             <div class="card-cost" style="background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);">${item.cost}💰</div>
         `;
@@ -572,6 +654,102 @@ function renderShop() {
 
         container.appendChild(itemDiv);
     }
+
+    // 绑定刷新按钮事件
+    const refreshBtn = document.getElementById('refresh-shop-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            if (GameState.player.gold >= refreshCost) {
+                GameState.player.gold -= refreshCost;
+                GameState.shopRefreshCount++;
+                renderShop();
+                showMessage(`商店已刷新！花费 ${refreshCost} 金币`);
+            } else {
+                showMessage('金币不足！');
+            }
+        });
+    }
+}
+
+// 渲染遗物商店
+function renderRelicShop() {
+    const container = document.getElementById('relic-shop-items');
+    if (!container) return;
+
+    // 获取一些随机遗物出售
+    const availableRelics = [
+        { id: 'burning-charcoal', name: '燃烧木炭', rarity: 'common', cost: 80, description: '火属性技能伤害+20%', sprite: '🔥' },
+        { id: 'mystic-water', name: '神秘水滴', rarity: 'common', cost: 80, description: '水属性技能伤害+20%', sprite: '💧' },
+        { id: 'miracle-seed', name: '奇迹种子', rarity: 'common', cost: 80, description: '草属性技能伤害+20%', sprite: '🌿' },
+        { id: 'magnet', name: '磁铁', rarity: 'common', cost: 80, description: '电属性技能伤害+20%', sprite: '🧲' },
+        { id: 'kings-rock', name: '王者之印', rarity: 'uncommon', cost: 150, description: '攻击有15%概率眩晕敌人', sprite: '👑' },
+        { id: 'scope-lens', name: '聚焦镜', rarity: 'uncommon', cost: 150, description: '暴击伤害+50%', sprite: '🔍' },
+        { id: 'leftovers', name: '剩饭', rarity: 'uncommon', cost: 180, description: '每回合恢复5HP', sprite: '🍚' },
+        { id: 'expert-belt', name: '博识眼镜', rarity: 'rare', cost: 250, description: '效果拔群时伤害+25%', sprite: '👓' },
+        { id: 'friendship-ribbon', name: '友情丝带', rarity: 'rare', cost: 200, description: '亲密度获取+50%', sprite: '🎗️' }
+    ];
+
+    // 随机选择3个遗物
+    const shuffled = [...availableRelics].sort(() => Math.random() - 0.5);
+    const shopRelics = shuffled.slice(0, 3);
+
+    for (const relic of shopRelics) {
+        // 检查是否已拥有
+        const owned = GameState.player.relics && GameState.player.relics.some(r => r.id === relic.id);
+        
+        const relicDiv = document.createElement('div');
+        relicDiv.className = `card ${relic.rarity}`;
+        relicDiv.style.cssText = 'cursor: pointer;';
+
+        relicDiv.innerHTML = `
+            <div class="card-name">${relic.sprite || '💎'} ${relic.name}</div>
+            <div class="card-type" style="color: #9c27b0;">💎 遗物</div>
+            <div class="card-description">${relic.description}</div>
+            <div class="card-cost" style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);">${owned ? '已拥有' : relic.cost + '💰'}</div>
+        `;
+
+        if (!owned && GameState.player.gold >= relic.cost) {
+            relicDiv.addEventListener('click', () => {
+                buyRelic(relic);
+            });
+        } else if (owned) {
+            relicDiv.style.opacity = '0.5';
+        } else {
+            relicDiv.style.opacity = '0.5';
+            relicDiv.style.cursor = 'not-allowed';
+        }
+
+        container.appendChild(relicDiv);
+    }
+}
+
+// 购买遗物
+function buyRelic(relic) {
+    if (GameState.player.gold < relic.cost) {
+        showMessage('金币不足！');
+        return;
+    }
+
+    GameState.player.gold -= relic.cost;
+    
+    // 添加遗物到玩家
+    if (!GameState.player.relics) {
+        GameState.player.relics = [];
+    }
+    
+    GameState.player.relics.push({
+        id: relic.id,
+        name: relic.name,
+        description: relic.description,
+        rarity: relic.rarity,
+        sprite: relic.sprite
+    });
+
+    showMessage(`购买了 ${relic.name}！`);
+    
+    // 刷新遗物商店
+    renderRelicShop();
+    updateUI();
 }
 
 // 显示移除卡牌对话框
@@ -689,6 +867,176 @@ function leaveShop() {
     updateUI();
 }
 
+// 显示遗物奖励界面
+function showRelicRewardScreen(type) {
+    // type: 'elite' 或 'boss'
+    const container = document.createElement('div');
+    container.className = 'relic-reward-overlay';
+    container.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        overflow-y: auto;
+        padding: 20px;
+    `;
+
+    const title = document.createElement('h2');
+    title.style.cssText = 'color: #ffcb05; margin-bottom: 10px; font-size: 1.5rem;';
+    title.textContent = type === 'boss' ? '👑 Boss遗物奖励！' : '💀 精英遗物奖励！';
+    container.appendChild(title);
+
+    const subtitle = document.createElement('p');
+    subtitle.style.cssText = 'color: #aaa; margin-bottom: 20px;';
+    subtitle.textContent = '选择一个遗物加入你的收藏';
+    container.appendChild(subtitle);
+
+    // 获取遗物选择
+    const rarity = type === 'boss' ? 'boss' : 'rare';
+    const relicCount = type === 'boss' ? 3 : 2;
+    
+    const availableRelics = [];
+    const usedRarities = [rarity];
+    
+    // Boss可以额外获得稀有遗物选项
+    if (type === 'boss') {
+        usedRarities.push('rare');
+    }
+    
+    for (const r of usedRarities) {
+        const relics = RELICS_DATA[r];
+        if (relics) {
+            const shuffled = [...relics].sort(() => Math.random() - 0.5);
+            const count = r === rarity ? relicCount : 1;
+            for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+                // 排除已拥有的遗物
+                if (typeof RelicManager !== 'undefined' && !RelicManager.hasRelic(shuffled[i].id)) {
+                    availableRelics.push({ ...shuffled[i], rarity: r });
+                }
+            }
+        }
+    }
+
+    if (availableRelics.length === 0) {
+        subtitle.textContent = '没有可用的遗物奖励';
+        setTimeout(() => {
+            container.remove();
+            continueAfterRelicReward(type);
+        }, 1500);
+        return;
+    }
+
+    // 遗物卡片容器
+    const cardsContainer = document.createElement('div');
+    cardsContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; max-width: 800px;';
+
+    for (const relic of availableRelics) {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = `card ${relic.rarity}`;
+        cardDiv.style.cssText = 'cursor: pointer; min-width: 150px; transition: transform 0.2s;';
+
+        const rarityColor = RELIC_RARITY[relic.rarity] ? RELIC_RARITY[relic.rarity].color : '#9e9e9e';
+
+        cardDiv.innerHTML = `
+            <div style="font-size: 2rem; margin-bottom: 10px;">${relic.sprite || '💎'}</div>
+            <div style="font-weight: bold; margin-bottom: 5px;">${relic.name}</div>
+            <div style="color: ${rarityColor}; font-size: 12px; margin-bottom: 5px;">
+                ${RELIC_RARITY[relic.rarity] ? RELIC_RARITY[relic.rarity].name : relic.rarity}
+            </div>
+            <div style="font-size: 12px; color: #ccc;">${relic.description}</div>
+        `;
+
+        cardDiv.addEventListener('mouseenter', () => {
+            cardDiv.style.transform = 'scale(1.05)';
+        });
+        cardDiv.addEventListener('mouseleave', () => {
+            cardDiv.style.transform = 'scale(1)';
+        });
+
+        cardDiv.addEventListener('click', () => {
+            if (typeof RelicManager !== 'undefined') {
+                RelicManager.addRelic(relic.id);
+            }
+            container.remove();
+            continueAfterRelicReward(type);
+        });
+
+        cardsContainer.appendChild(cardDiv);
+    }
+
+    container.appendChild(cardsContainer);
+
+    // 跳过按钮
+    const skipBtn = document.createElement('button');
+    skipBtn.textContent = '跳过遗物';
+    skipBtn.style.cssText = `
+        margin-top: 20px;
+        padding: 10px 30px;
+        background: #555;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    `;
+    skipBtn.addEventListener('click', () => {
+        container.remove();
+        continueAfterRelicReward(type);
+    });
+    container.appendChild(skipBtn);
+
+    document.body.appendChild(container);
+}
+
+// 遗物奖励后继续
+function continueAfterRelicReward(type) {
+    if (type === 'boss') {
+        // Boss战后处理
+        GameState.stats.floorsCleared = GameState.progress.currentFloor;
+
+        if (GameState.progress.currentFloor >= GameState.progress.maxFloors) {
+            // 游戏胜利
+            console.log('游戏胜利！');
+            setTimeout(() => gameVictory(), 500);
+        } else {
+            // 进入下一层
+            GameState.progress.currentFloor++;
+            GameState.progress.currentNode = null;
+            GameState.progress.completedNodes = [];
+            
+            const newMap = generateMap();
+            GameState.progress.map = newMap;
+            
+            if (newMap[0] && newMap[0][0]) {
+                newMap[0][0].available = true;
+            }
+
+            const healAmount = Math.floor(GameState.player.maxHp * 0.2);
+            GameState.player.hp = Math.min(GameState.player.maxHp, GameState.player.hp + healAmount);
+
+            if (typeof RelicManager !== 'undefined' && typeof RelicManager.onFloorStart === 'function') {
+                RelicManager.onFloorStart();
+            }
+
+            setTimeout(() => {
+                showScreen('map-screen');
+                renderMap();
+                updateUI();
+                showMessage(`进入第 ${GameState.progress.currentFloor} 层! 恢复 ${healAmount} HP`);
+            }, 500);
+        }
+    } else {
+        // 精英战后显示卡牌奖励
+        showRewardScreen(true);
+    }
+}
+
 // 显示奖励界面
 function showRewardScreen(isElite) {
     showScreen('reward-screen');
@@ -698,9 +1046,8 @@ function showRewardScreen(isElite) {
 
     container.innerHTML = '';
 
-    const cards = getRandomCardRewards(3, {
-        minRarity: isElite ? 'uncommon' : 'common'
-    });
+    // 获取卡牌奖励（包含道具卡）
+    const cards = getRandomCardRewardsLocal(3, isElite ? 'uncommon' : 'common');
 
     if (cards.length === 0) {
         showMessage('没有可用的奖励卡牌!');
@@ -716,14 +1063,54 @@ function showRewardScreen(isElite) {
         const cardDiv = document.createElement('div');
         cardDiv.className = `card ${card.rarity} pokemon-card`;
         cardDiv.style.cursor = 'pointer';
+        
+        // 道具卡特殊样式
+        if (card.type === 'item') {
+            cardDiv.classList.add('item-card');
+        }
 
-        cardDiv.innerHTML = `
-            <div class="card-cost">${card.cost}</div>
-            <div class="card-name">${card.name}</div>
-            <div class="card-type">${CARD_TYPES ? CARD_TYPES[card.type] : card.type}</div>
-            <div class="card-description">${card.description}</div>
-            <div class="card-rarity">${CARD_RARITY ? CARD_RARITY[card.rarity] : card.rarity}</div>
-        `;
+        // 根据卡牌类型显示不同内容
+        let cardContent = '';
+        if (card.type === 'item') {
+            cardContent = `
+                <div class="card-cost">${card.cost}</div>
+                <div class="card-name">${card.sprite || '📦'} ${card.name}</div>
+                <div class="card-type" style="color: #4caf50;">📦 道具</div>
+                <div class="card-description">${card.description}</div>
+                <div class="card-rarity">${CARD_RARITY ? CARD_RARITY[card.rarity] : card.rarity}</div>
+                ${card.consume ? '<div style="font-size: 11px; color: #f44336;">消耗品</div>' : ''}
+                ${card.returnAfterBattle ? '<div style="font-size: 11px; color: #2196f3;">战斗后返回</div>' : ''}
+            `;
+        } else if (card.isPokemonCard) {
+            const pokemon = card.pokemonData;
+            const typesHtml = pokemon.types ? pokemon.types.map(t =>
+                `<span class="type-badge type-${t}">${getTypeName(t)}</span>`
+            ).join('') : '';
+            cardContent = `
+                <div class="card-cost">${card.cost}</div>
+                <div class="card-name">${card.name}</div>
+                <div class="card-types">${typesHtml}</div>
+                <div class="card-description">${card.description}</div>
+                <div class="card-rarity">${CARD_RARITY ? CARD_RARITY[card.rarity] : card.rarity}</div>
+                <div style="font-size: 11px; color: #9c27b0;">宝可梦卡</div>
+            `;
+        } else {
+            const typeNames = {
+                'attack': '⚔️ 攻击',
+                'defense': '🛡️ 防御',
+                'skill': '✨ 技能',
+                'energy': '⚡ 能量'
+            };
+            cardContent = `
+                <div class="card-cost">${card.cost}</div>
+                <div class="card-name">${card.name}</div>
+                <div class="card-type">${typeNames[card.type] || card.type}</div>
+                <div class="card-description">${card.description}</div>
+                <div class="card-rarity">${card.rarity || ''}</div>
+            `;
+        }
+        
+        cardDiv.innerHTML = cardContent;
 
         cardDiv.addEventListener('click', () => {
             selectRewardCard(card);

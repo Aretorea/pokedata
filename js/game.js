@@ -13,12 +13,14 @@ const GameState = {
         shield: 0,
         pokemon: null,  // 当前宝可梦
         pokemonCards: [], // 宝可梦牌组（用于排序和自动变身）
+        activePokemon: null, // 当前激活的宝可梦
         deck: [],       // 完整牌组
         hand: [],       // 手牌
         drawPile: [],   // 抽牌堆
         discardPile: [],// 弃牌堆
         exhaustPile: [],// 消耗堆
-        statusEffects: [] // 状态效果
+        statusEffects: [], // 状态效果
+        relics: []      // 遗物列表
     },
 
     // 游戏进度
@@ -74,7 +76,9 @@ function bindEvents() {
     // 主菜单按钮
     document.getElementById('start-game-btn').addEventListener('click', () => {
         showScreen('character-select');
-        renderCharacterSelect();
+        if (typeof renderCharacterSelect === 'function') {
+            renderCharacterSelect();
+        }
     });
 
     document.getElementById('how-to-play-btn').addEventListener('click', () => {
@@ -138,6 +142,7 @@ function startNewGame(characterId) {
     GameState.player.gold = character.startingGold;
     GameState.player.shield = 0;
     GameState.player.statusEffects = [];
+    GameState.player.relics = [];
 
     // 创建初始牌组
     GameState.player.deck = character.startingDeck.map(cardId => getCardById(cardId)).filter(c => c);
@@ -152,6 +157,8 @@ function startNewGame(characterId) {
     GameState.player.hand = [];
     GameState.player.discardPile = [];
     GameState.player.exhaustPile = [];
+    GameState.player.pokemonCards = [];
+    GameState.player.activePokemon = null;
 
     // 重置进度
     GameState.progress.currentFloor = 1;
@@ -166,6 +173,11 @@ function startNewGame(characterId) {
         damageTaken: 0,
         floorsCleared: 0
     };
+
+    // 初始化遗物管理器
+    if (typeof RelicManager !== 'undefined' && typeof RelicManager.init === 'function') {
+        RelicManager.init();
+    }
 
     // 生成地图
     GameState.progress.map = generateMap();
@@ -186,12 +198,15 @@ function resetGame() {
         gold: 0,
         shield: 0,
         pokemon: null,
+        pokemonCards: [],
+        activePokemon: null,
         deck: [],
         hand: [],
         drawPile: [],
         discardPile: [],
         exhaustPile: [],
-        statusEffects: []
+        statusEffects: [],
+        relics: []
     };
 
     GameState.progress = {
@@ -219,6 +234,11 @@ function resetGame() {
     };
 
     GameState.character = null;
+    
+    // 重置遗物管理器
+    if (typeof RelicManager !== 'undefined' && typeof RelicManager.init === 'function') {
+        RelicManager.init();
+    }
 }
 
 // 显示指定屏幕
@@ -255,13 +275,32 @@ function drawCards(count) {
             if (GameState.player.discardPile.length === 0) {
                 break; // 没有牌可抽
             }
-            GameState.player.drawPile = shuffleDeck(GameState.player.discardPile);
+            // 过滤不可用的道具卡后洗牌
+            let availableDiscard = GameState.player.discardPile;
+            if (typeof ItemManager !== 'undefined' && typeof ItemManager.filterAvailableItems === 'function') {
+                availableDiscard = ItemManager.filterAvailableItems(GameState.player.discardPile);
+            }
+            GameState.player.drawPile = shuffleDeck(availableDiscard);
             GameState.player.discardPile = [];
         }
 
-        const card = GameState.player.drawPile.pop();
-        drawn.push(card);
-        GameState.player.hand.push(card);
+        // 抽牌时过滤不可用的道具卡
+        let card = GameState.player.drawPile.pop();
+        
+        // 如果是道具卡且不可用，跳过这张牌
+        if (card && card.type === 'item' && typeof ItemManager !== 'undefined' && typeof ItemManager.isItemAvailable === 'function') {
+            if (!ItemManager.isItemAvailable(card.id)) {
+                // 把不可用的牌放到一边，继续抽
+                GameState.player.exhaustPile.push(card);
+                // 递归再抽一张
+                continue;
+            }
+        }
+        
+        if (card) {
+            drawn.push(card);
+            GameState.player.hand.push(card);
+        }
     }
 
     updateUI();

@@ -852,6 +852,369 @@ const CARDS_DATA = {
             cost: 1,
             rarity: 'rare',
             pokemonType: 'dark',
+            description: '特攻提升2级。',
+            effects: [{ type: 'statBoost', stat: 'spAttack', stages: 2 }]
+        },
+        {
+            id: 'swords-dance',
+            name: '剑舞',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '物攻提升2级。',
+            effects: [{ type: 'statBoost', stat: 'attack', stages: 2 }]
+        },
+        {
+            id: 'iron-defense',
+            name: '铁壁',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'steel',
+            description: '物防提升2级。',
+            effects: [{ type: 'statBoost', stat: 'defense', stages: 2 }]
+        },
+        {
+            id: 'agility',
+            name: '高速移动',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'psychic',
+            description: '闪避率提升2级。',
+            effects: [{ type: 'statBoost', stat: 'evasion', stages: 2 }]
+        },
+        {
+            id: 'focus-energy',
+            name: '聚气',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'normal',
+            description: '暴击率提升2级。',
+            effects: [{ type: 'statBoost', stat: 'critRate', stages: 2 }]
+        },
+        
+        // ====== 盾反流卡牌 ======
+        {
+            id: 'counter',
+            name: '反击',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'fighting',
+            description: '获得5护盾。下回合攻击时，造成等于护盾值2倍的伤害。',
+            effects: [
+                { type: 'block', value: 5 },
+                { type: 'counterSetup', multiplier: 2 }
+            ]
+        },
+        {
+            id: 'mirror-coat',
+            name: '镜面反射',
+            type: 'skill',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'psychic',
+            description: '获得10护盾。受到特殊攻击时反弹50%伤害。',
+            effects: [
+                { type: 'block', value: 10 },
+                { type: 'reflectSetup', multiplier: 0.5 }
+            ]
+        },
+        {
+            id: 'protect',
+            name: '守住',
+            type: 'skill',
+            cost: 0,
+            rarity: 'uncommon',
+            pokemonType: 'normal',
+            description: '获得15护盾。本回合免疫所有伤害。',
+            effects: [
+                { type: 'block', value: 15 },
+                { type: 'invulnerable', duration: 1 }
+            ]
+        },
+        {
+            id: 'bide',
+            name: '忍耐',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '获得8护盾。下回合造成累计受到伤害的2倍。',
+            effects: [
+                { type: 'block', value: 8 },
+                { type: 'bideSetup' }
+            ]
+        },
+        
+        // ====== 连击流卡牌 ======
+        {
+            id: 'double-slap',
+            name: '连环巴掌',
+            type: 'attack',
+            cost: 1,
+            rarity: 'common',
+            pokemonType: 'normal',
+            description: '造成3点伤害，攻击2次。',
+            effects: [
+                { type: 'damage', value: 3, hits: 2 }
+            ]
+        },
+        {
+            id: 'furys-wipe',
+            name: '愤怒之拳',
+            type: 'attack',
+            cost: 2,
+            rarity: 'uncommon',
+            pokemonType: 'ghost',
+            description: '造成4点伤害，攻击3次。每击杀一个敌人伤害+1。',
+            effects: [
+                { type: 'damage', value: 4, hits: 3 }
+            ]
+        },
+        {
+            id: 'bullet-seed',
+            name: '种子机关枪',
+            type: 'attack',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'grass',
+            description: '造成2点伤害，攻击4次。',
+            effects: [
+                { type: 'damage', value: 2, hits: 4 }
+            ]
+        },
+        {
+            id: 'tail-slap',
+            name: '尾巴打',
+            type: 'attack',
+            cost: 1,
+            rarity: 'common',
+            pokemonType: 'normal',
+            description: '造成3点伤害，攻击2次。有20%概率眩晕敌人。',
+            effects: [
+                { type: 'damage', value: 3, hits: 2 },
+                { type: 'applyStatus', status: 'flinch', chance: 0.2 }
+            ]
+        },
+        {
+            id: 'bonemerang',
+            name: '骨头回旋镖',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'ground',
+            description: '造成8点伤害，攻击2次。无视护盾。',
+            effects: [
+                { type: 'damage', value: 8, hits: 2, ignoreShield: true }
+            ]
+        },
+        
+        // ====== 多次行动流卡牌 ======
+        {
+            id: 'extreme-speed',
+            name: '神速',
+            type: 'attack',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'normal',
+            description: '造成8点伤害。本回合可再使用一张攻击牌。',
+            effects: [
+                { type: 'damage', value: 8 },
+                { type: 'extraAction', type: 'attack', count: 1 }
+            ]
+        },
+        {
+            id: 'quick-attack',
+            name: '电光一闪',
+            type: 'attack',
+            cost: 0,
+            rarity: 'common',
+            pokemonType: 'normal',
+            description: '造成4点伤害。本回合可再使用一张技能牌。',
+            effects: [
+                { type: 'damage', value: 4 },
+                { type: 'extraAction', type: 'skill', count: 1 }
+            ]
+        },
+        {
+            id: 'fake-out',
+            name: '佯攻',
+            type: 'attack',
+            cost: 0,
+            rarity: 'uncommon',
+            pokemonType: 'normal',
+            description: '造成3点伤害。使敌人畏缩。',
+            effects: [
+                { type: 'damage', value: 3 },
+                { type: 'applyStatus', status: 'flinch' }
+            ],
+            firstTurnOnly: true
+        },
+        
+        // ====== 行动滞后卡牌 ======
+        {
+            id: 'focus-punch',
+            name: '聚气拳',
+            type: 'attack',
+            cost: 2,
+            rarity: 'epic',
+            pokemonType: 'fighting',
+            description: '本回合不攻击。下回合造成30点伤害。被打断则失败。',
+            effects: [
+                { type: 'delayedAttack', value: 30, delayTurns: 1 }
+            ]
+        },
+        {
+            id: 'solar-beam',
+            name: '阳光烈焰',
+            type: 'attack',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'grass',
+            description: '本回合蓄力。下回合造成25点伤害。',
+            effects: [
+                { type: 'delayedAttack', value: 25, delayTurns: 1, chargeFirst: true }
+            ]
+        },
+        {
+            id: 'sky-attack',
+            name: '神鸟猛击',
+            type: 'attack',
+            cost: 2,
+            rarity: 'epic',
+            pokemonType: 'flying',
+            description: '本回合蓄力，获得10护盾。下回合造成20点伤害，暴击率+30%。',
+            effects: [
+                { type: 'block', value: 10 },
+                { type: 'delayedAttack', value: 20, delayTurns: 1, critBonus: 0.3 }
+            ]
+        },
+        
+        // ====== 暴击相关卡牌 ======
+        {
+            id: 'slash-crit',
+            name: '劈开',
+            type: 'attack',
+            cost: 1,
+            rarity: 'common',
+            pokemonType: 'normal',
+            description: '造成6点伤害。暴击率+20%。',
+            effects: [
+                { type: 'damage', value: 6, critChance: 0.2 }
+            ]
+        },
+        {
+            id: 'night-slash',
+            name: '暗袭',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'dark',
+            description: '造成10点伤害。暴击率+30%。暴击时伤害翻倍。',
+            effects: [
+                { type: 'damage', value: 10, critChance: 0.3, critMultiplier: 2.0 }
+            ]
+        },
+        {
+            id: 'cross-chop',
+            name: '十字劈',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'fighting',
+            description: '造成12点伤害。暴击率+25%。',
+            effects: [
+                { type: 'damage', value: 12, critChance: 0.25 }
+            ]
+        },
+        {
+            id: 'drill-run',
+            name: '直冲钻',
+            type: 'attack',
+            cost: 2,
+            rarity: 'uncommon',
+            pokemonType: 'ground',
+            description: '造成10点伤害。暴击率+30%。',
+            effects: [
+                { type: 'damage', value: 10, critChance: 0.3 }
+            ]
+        },
+        {
+            id: 'stone-edge-2',
+            name: '尖石攻击',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'rock',
+            description: '造成12点伤害。暴击率+35%。',
+            effects: [
+                { type: 'damage', value: 12, critChance: 0.35 }
+            ]
+        },
+        
+        // ====== 闪避相关卡牌 ======
+        {
+            id: 'double-team',
+            name: '影子分身',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'normal',
+            description: '闪避率提升2级。获得5护盾。',
+            effects: [
+                { type: 'statBoost', stat: 'evasion', stages: 2 },
+                { type: 'block', value: 5 }
+            ]
+        },
+        {
+            id: 'minimize',
+            name: '变小',
+            type: 'skill',
+            cost: 1,
+            rarity: 'uncommon',
+            pokemonType: 'normal',
+            description: '闪避率提升3级。',
+            effects: [
+                { type: 'statBoost', stat: 'evasion', stages: 3 }
+            ]
+        },
+        {
+            id: 'detect',
+            name: '看穿',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'fighting',
+            description: '闪避率提升2级。下回合获得先手。',
+            effects: [
+                { type: 'statBoost', stat: 'evasion', stages: 2 },
+                { type: 'priority', nextTurn: true }
+            ]
+        },
+        {
+            id: 'phantom-force',
+            name: '潜灵奇袭',
+            type: 'attack',
+            cost: 2,
+            rarity: 'rare',
+            pokemonType: 'ghost',
+            description: '造成15点伤害。本回合免疫所有攻击。',
+            effects: [
+                { type: 'damage', value: 15 },
+                { type: 'untouchable', duration: 1 }
+            ]
+        }
+    ]
+};
+            name: '诡计',
+            type: 'skill',
+            cost: 1,
+            rarity: 'rare',
+            pokemonType: 'dark',
             description: '下张攻击牌伤害+15。',
             effects: [{ type: 'buff', buff: 'damageBonus', value: 15, duration: 1 }]
         },
@@ -923,14 +1286,41 @@ function getCardsByRarity(rarity) {
 
 // 获取随机卡牌奖励
 function getRandomCardRewards(count = 3, options = {}) {
-    const { excludeRarity = [], minRarity = 'common' } = options;
+    const { excludeRarity = [], minRarity = 'common', includeItems = false } = options;
     const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
     const minIndex = rarityOrder.indexOf(minRarity);
-    const availableCards = CARDS_DATA.obtainable.filter(card => {
+    let availableCards = CARDS_DATA.obtainable.filter(card => {
         const cardIndex = rarityOrder.indexOf(card.rarity);
         return cardIndex >= minIndex && !excludeRarity.includes(card.rarity);
     });
+    
+    // 添加道具卡（较低概率）
+    if (includeItems && typeof ITEM_CARDS_DATA !== 'undefined' && Math.random() < 0.3) {
+        // 只添加普通和罕见稀有度的道具卡
+        const itemCards = ITEM_CARDS_DATA.filter(card => {
+            const cardIndex = rarityOrder.indexOf(card.rarity);
+            return cardIndex >= minIndex && cardIndex <= 1 && !excludeRarity.includes(card.rarity);
+        });
+        // 随机选择1-2个道具卡加入池
+        const numItems = Math.min(2, Math.floor(Math.random() * 2) + 1);
+        const shuffledItems = itemCards.sort(() => Math.random() - 0.5);
+        for (let i = 0; i < numItems && i < shuffledItems.length; i++) {
+            availableCards.push(shuffledItems[i]);
+        }
+    }
+    
+    // 添加宝可梦卡（小概率）
+    if (typeof POKEMON_DATA !== 'undefined' && Math.random() < 0.15) {
+        const obtainablePokemon = POKEMON_DATA.obtainable.filter(p => !p.isLegendary);
+        if (obtainablePokemon.length > 0) {
+            const randomPokemon = obtainablePokemon[Math.floor(Math.random() * obtainablePokemon.length)];
+            if (typeof createPokemonCard === 'function') {
+                const pokemonCard = createPokemonCard(randomPokemon);
+                availableCards.push(pokemonCard);
+            }
+        }
+    }
 
     const selected = [];
     const shuffled = [...availableCards].sort(() => Math.random() - 0.5);

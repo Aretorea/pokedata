@@ -7,9 +7,121 @@
 let playerSkipTurn = false;
 let enemySkipTurn = false;
 
+// ====== 属性克制表 ======
+const TYPE_CHART = {
+    // 攻击属性: { 克制的属性: 倍率, 被克制的属性: 倍率 }
+    fire: {
+        strong: ['grass', 'bug', 'ice', 'steel'],    // 克制
+        weak: ['water', 'fire', 'rock', 'dragon']    // 被抵抗
+    },
+    water: {
+        strong: ['fire', 'ground', 'rock'],
+        weak: ['water', 'grass', 'dragon']
+    },
+    grass: {
+        strong: ['water', 'ground', 'rock'],
+        weak: ['fire', 'grass', 'poison', 'flying', 'bug', 'dragon', 'steel']
+    },
+    electric: {
+        strong: ['water', 'flying'],
+        weak: ['electric', 'grass', 'dragon', 'ground']  // ground免疫
+    },
+    ice: {
+        strong: ['grass', 'ground', 'flying', 'dragon'],
+        weak: ['fire', 'water', 'ice', 'steel']
+    },
+    fighting: {
+        strong: ['normal', 'ice', 'rock', 'dark', 'steel'],
+        weak: ['flying', 'poison', 'bug', 'psychic', 'fairy']
+    },
+    poison: {
+        strong: ['grass', 'fairy'],
+        weak: ['poison', 'ground', 'rock', 'ghost', 'steel']
+    },
+    ground: {
+        strong: ['fire', 'electric', 'poison', 'rock', 'steel'],
+        weak: ['grass', 'bug']  // flying免疫
+    },
+    flying: {
+        strong: ['grass', 'fighting', 'bug'],
+        weak: ['electric', 'rock', 'steel']
+    },
+    psychic: {
+        strong: ['fighting', 'poison'],
+        weak: ['psychic', 'dark', 'steel']
+    },
+    bug: {
+        strong: ['grass', 'psychic', 'dark'],
+        weak: ['fire', 'fighting', 'poison', 'flying', 'ghost', 'steel', 'fairy']
+    },
+    rock: {
+        strong: ['fire', 'ice', 'flying', 'bug'],
+        weak: ['fighting', 'ground', 'steel']
+    },
+    ghost: {
+        strong: ['psychic', 'ghost'],
+        weak: ['dark']  // normal免疫
+    },
+    dragon: {
+        strong: ['dragon'],
+        weak: ['steel', 'fairy']
+    },
+    dark: {
+        strong: ['psychic', 'ghost'],
+        weak: ['fighting', 'dark', 'fairy']
+    },
+    steel: {
+        strong: ['ice', 'rock', 'fairy'],
+        weak: ['fire', 'water', 'electric', 'steel']
+    },
+    fairy: {
+        strong: ['fighting', 'dragon', 'dark'],
+        weak: ['fire', 'poison', 'steel']
+    },
+    normal: {
+        strong: [],
+        weak: ['rock', 'steel']  // ghost免疫
+    }
+};
+
+// 计算属性克制倍率
+function getTypeEffectiveness(attackType, defenderTypes) {
+    if (!attackType || !defenderTypes || !TYPE_CHART[attackType]) {
+        return 1;
+    }
+    
+    const chart = TYPE_CHART[attackType];
+    let multiplier = 1;
+    
+    for (const defType of defenderTypes) {
+        if (chart.strong.includes(defType)) {
+            multiplier *= 2;  // 克制，2倍伤害
+        } else if (chart.weak.includes(defType)) {
+            multiplier *= 0.5;  // 被抵抗，0.5倍伤害
+        } else if (attackType === 'electric' && defType === 'ground') {
+            multiplier *= 0;  // 电对地面免疫
+        } else if (attackType === 'ground' && defType === 'flying') {
+            multiplier *= 0;  // 地面对飞行免疫
+        } else if (attackType === 'normal' && defType === 'ghost') {
+            multiplier *= 0;  // 普通对幽灵免疫
+        } else if (attackType === 'fighting' && defType === 'ghost') {
+            multiplier *= 0;  // 格斗对幽灵免疫
+        } else if (attackType === 'psychic' && defType === 'dark') {
+            multiplier *= 0;  // 超能对恶免疫
+        } else if (attackType === 'dragon' && defType === 'fairy') {
+            multiplier *= 0;  // 龙对妖精免疫
+        }
+    }
+    
+    return multiplier;
+}
+
 // 开始战斗
 function startBattle(enemyData) {
     console.log('战斗开始! 敌人:', enemyData.name);
+
+    // 重置战斗结束标志
+    battleEnded = false;
 
     // 重置跳过回合标记
     playerSkipTurn = false;
@@ -19,6 +131,7 @@ function startBattle(enemyData) {
     GameState.battle.inBattle = true;
     GameState.battle.turn = 0;
     GameState.battle.energy = GameState.battle.maxEnergy;
+    GameState.battle.megaEvolutionUsed = false; // 重置超进化使用标记
     GameState.battle.enemy = {
         ...enemyData,
         currentHp: enemyData.hp,
@@ -35,14 +148,26 @@ function startBattle(enemyData) {
     GameState.player.shield = 0;
     GameState.player.damageBonus = 0;  // 玩家伤害加成
     GameState.player.substitute = 0;   // 替身
+    GameState.player.damageReduction = 0; // 伤害减免
+    GameState.player.critBonus = 0;    // 暴击加成
+
+    // 初始化道具管理器
+    if (typeof ItemManager !== 'undefined') {
+        ItemManager.onBattleStart();
+    }
 
     // 自动使用第一张宝可梦牌变身
-    if (typeof PokemonCardSystem !== 'undefined') {
+    if (typeof PokemonCardSystem !== 'undefined' && typeof PokemonCardSystem.autoTransformOnBattleStart === 'function') {
         PokemonCardSystem.autoTransformOnBattleStart();
     }
 
     // 显示战斗界面
     showScreen('battle-screen');
+    
+    // 更新进化进度UI
+    if (typeof updateEvolutionProgressUI === 'function') {
+        updateEvolutionProgressUI();
+    }
 
     // 开始第一回合
     startTurn();
@@ -173,8 +298,20 @@ function playCard(cardIndex) {
     // 执行卡牌效果
     executeCardEffects(card);
 
-    // 添加到弃牌堆
-    GameState.player.discardPile.push(card);
+    // 判断是否是消耗道具卡
+    if (card.type === 'item' && card.consume) {
+        // 消耗道具卡直接进入消耗堆，不入弃牌堆
+        GameState.player.exhaustPile.push(card);
+        console.log(`消耗道具 ${card.name} 已使用，将从牌组永久移除`);
+        
+        // 记录要移除的道具（使用引用来标识）
+        if (typeof ItemManager !== 'undefined') {
+            ItemManager.consumedItems.push(card);
+        }
+    } else {
+        // 添加到弃牌堆
+        GameState.player.discardPile.push(card);
+    }
 
     // 更新统计
     GameState.stats.cardsPlayed++;
@@ -205,7 +342,56 @@ function executeCardEffects(card) {
                     damage += GameState.player.damageBonus;
                 }
 
-                dealDamageToEnemy(damage, effect.attackType || 'normal', effect);
+                // 计算技能类型加成（四维数值）
+                const skillType = card.skillType || effect.skillType || 'physical';
+                const activePokemon = GameState.player.activePokemon || (typeof PokemonCardSystem !== 'undefined' ? PokemonCardSystem.activePokemon : null);
+                
+                if (activePokemon) {
+                    if (skillType === 'physical') {
+                        // 物理攻击：使用物攻
+                        const attackStat = activePokemon.attack || 50;
+                        damage = Math.floor(damage * (attackStat / 50));
+                    } else if (skillType === 'special') {
+                        // 特殊攻击：使用特攻
+                        const spAttackStat = activePokemon.spAttack || 50;
+                        damage = Math.floor(damage * (spAttackStat / 50));
+                    }
+                    
+                    // 本系加成检查
+                    const attackType = effect.attackType || card.pokemonType;
+                    if (attackType && activePokemon.types && activePokemon.types.includes(attackType)) {
+                        // 获取本系加成倍率（默认1.5倍）
+                        let stabMultiplier = 1.5;
+                        
+                        // 检查适应力特性
+                        if (activePokemon.ability === 'adaptability' && typeof AbilityManager !== 'undefined') {
+                            const ability = AbilityManager.getAbility('adaptability');
+                            if (ability) {
+                                stabMultiplier = ability.effect.value || 2.0;
+                            }
+                        }
+                        
+                        damage = Math.floor(damage * stabMultiplier);
+                        showMessage('本系加成!');
+                    }
+                }
+
+                // 获取攻击属性（优先使用effect.attackType，否则使用card.pokemonType）
+                const attackType = effect.attackType || card.pokemonType || 'normal';
+                
+                dealDamageToEnemy(damage, attackType, effect);
+                break;
+            
+            case 'transform':
+                // 宝可梦变身效果
+                if (card.isPokemonCard && card.pokemonData) {
+                    if (typeof PokemonCardSystem !== 'undefined' && typeof PokemonCardSystem.usePokemonCard === 'function') {
+                        const transformResult = PokemonCardSystem.usePokemonCard(card);
+                        if (transformResult && transformResult.remove) {
+                            updateBattleUI();
+                        }
+                    }
+                }
                 break;
 
             case 'block':
@@ -286,23 +472,283 @@ function executeCardEffects(card) {
                 }
                 break;
 
+            // ====== 道具卡效果 ======
+            case 'heal':
+                if (typeof healPlayer === 'function') {
+                    healPlayer(effect.value);
+                }
+                break;
+                
+            case 'fullHeal':
+                GameState.player.hp = GameState.player.maxHp;
+                showMessage('HP完全恢复！');
+                break;
+                
+            case 'cureStatus':
+                GameState.player.statusEffects = [];
+                showMessage('状态异常已治愈！');
+                break;
+
+            case 'capture':
+                // 精灵球捕捉
+                if (typeof PokeballSystem !== 'undefined' && typeof PokeballSystem.attemptCapture === 'function') {
+                    const result = PokeballSystem.attemptCapture(effect.ballType);
+                    if (result.success) {
+                        showMessage(result.message);
+                        setTimeout(() => endBattle(true), 1000);
+                    } else {
+                        showMessage(result.message);
+                    }
+                }
+                break;
+
+            case 'evolve':
+                // 进化石进化
+                if (typeof ItemManager !== 'undefined') {
+                    ItemManager.attemptItemEvolution(effect.elementType);
+                }
+                break;
+
+            case 'megaEvolve':
+                // 超进化
+                if (typeof ItemManager !== 'undefined') {
+                    ItemManager.performMegaEvolution(effect.pokemon, effect.form);
+                }
+                break;
+
+            case 'itemBuff':
+                // 道具buff效果
+                if (effect.buff === 'damageBonus') {
+                    GameState.player.damageBonus = (GameState.player.damageBonus || 0) + (effect.value || 0);
+                    showMessage(`攻击增强！伤害+${effect.value}`);
+                } else if (effect.buff === 'damageReduction') {
+                    GameState.player.damageReduction = (GameState.player.damageReduction || 0) + (effect.value || 0);
+                    showMessage('防御增强！');
+                } else if (effect.buff === 'critBonus') {
+                    GameState.player.critBonus = (GameState.player.critBonus || 0) + (effect.value || 0);
+                    showMessage('暴击率提升！');
+                }
+                break;
+
+            case 'endTurn':
+                // 结束当前回合
+                showMessage('回合结束！');
+                setTimeout(() => endTurn(), 300);
+                break;
+
+            case 'debuff':
+                // 对敌人施加debuff
+                if (effect.debuff === 'weaken') {
+                    GameState.battle.enemy.weakened = (GameState.battle.enemy.weakened || 0) + (effect.value || 0.25);
+                    GameState.battle.enemy.weakenedDuration = effect.duration || 2;
+                    showMessage('敌人被削弱！');
+                } else if (effect.debuff === 'vulnerable') {
+                    GameState.battle.enemy.vulnerable = (GameState.battle.enemy.vulnerable || 0) + (effect.value || 1);
+                    GameState.battle.enemy.vulnerableDuration = effect.duration || 2;
+                    showMessage('敌人变得脆弱！');
+                } else if (effect.debuff === 'weakenShield') {
+                    // 削弱护盾
+                    if (GameState.battle.enemy.shield > 0) {
+                        GameState.battle.enemy.shield = Math.floor(GameState.battle.enemy.shield * (1 - (effect.value || 0.5)));
+                        showMessage('敌人的护盾被削弱！');
+                    }
+                }
+                break;
+
+            // ====== 能力提升系统 ======
+            case 'statBoost':
+                applyStatBoost(effect.stat, effect.stages || 1);
+                break;
+
+            case 'statDrop':
+                applyStatDrop(effect.stat, effect.stages || 1, effect.target || 'enemy');
+                break;
+
+            // ====== 盾反流效果 ======
+            case 'counterSetup':
+                GameState.player.counterSetup = {
+                    multiplier: effect.multiplier || 2,
+                    active: true
+                };
+                showMessage('准备反击！');
+                break;
+
+            case 'reflectSetup':
+                GameState.player.reflectSetup = {
+                    multiplier: effect.multiplier || 0.5,
+                    active: true
+                };
+                showMessage('镜面反射准备！');
+                break;
+
+            case 'bideSetup':
+                GameState.player.bideSetup = {
+                    damageTaken: 0,
+                    turns: 1,
+                    active: true
+                };
+                showMessage('忍耐积蓄中...');
+                break;
+
+            case 'invulnerable':
+                GameState.player.invulnerable = effect.duration || 1;
+                showMessage('获得无敌状态！');
+                break;
+
+            case 'untouchable':
+                GameState.player.untouchable = effect.duration || 1;
+                showMessage('进入虚无状态！');
+                break;
+
+            // ====== 连击流效果 ======
+            case 'damage':
+                // 处理多次攻击
+                const hits = effect.hits || 1;
+                let totalDamage = 0;
+                for (let i = 0; i < hits; i++) {
+                    const hitDamage = executeDamageCalculation(effect, card);
+                    totalDamage += hitDamage;
+                    if (i < hits - 1) {
+                        showMessage(`第${i + 1}击: ${hitDamage}伤害！`);
+                    }
+                }
+                if (hits > 1) {
+                    showMessage(`连击${hits}次！共${totalDamage}伤害！`);
+                }
+                break;
+
+            // ====== 多次行动流 ======
+            case 'extraAction':
+                GameState.battle.extraActions = (GameState.battle.extraActions || 0) + (effect.count || 1);
+                GameState.battle.extraActionType = effect.type || 'any';
+                showMessage(`可再使用${effect.count}张卡牌！`);
+                break;
+
+            // ====== 行动滞后 ======
+            case 'delayedAttack':
+                GameState.player.delayedAttack = {
+                    value: effect.value,
+                    turns: effect.delayTurns || 1,
+                    critBonus: effect.critBonus || 0,
+                    chargeFirst: effect.chargeFirst || false
+                };
+                if (effect.chargeFirst) {
+                    showMessage('蓄力中...');
+                } else {
+                    showMessage(`${effect.delayTurns}回合后发动！`);
+                }
+                break;
+
+            case 'priority':
+                if (effect.nextTurn) {
+                    GameState.player.priorityNextTurn = true;
+                    showMessage('下回合先手！');
+                }
+                break;
+
             default:
                 console.log('未知效果类型:', effect.type);
+                
+                // 道具卡效果处理
+                if (card && card.type === 'item') {
+                    handleItemCardEffect(effect, card);
+                }
         }
+    }
+
+    // 处理道具卡消耗
+    if (card && card.type === 'item') {
+        handleItemCardConsumption(card);
     }
 
     // 动画效果
     animateCardPlay();
 }
 
+// 处理道具卡效果
+function handleItemCardEffect(effect, card) {
+    if (typeof ItemManager !== 'undefined') {
+        ItemManager.executeItemEffect(effect, { card });
+    }
+}
+
+// 处理道具卡消耗
+function handleItemCardConsumption(card) {
+    if (typeof ItemManager === 'undefined') return;
+    
+    if (card.consume) {
+        // 消耗道具 - 从牌组永久移除
+        ItemManager.consumedItems.push(card.id);
+        console.log(`道具 ${card.name} 已消耗，将从牌组永久移除`);
+        
+        // 从当前手牌移到消耗堆
+        const handIndex = GameState.player.hand.findIndex(c => c.id === card.id);
+        if (handIndex >= 0) {
+            GameState.player.hand.splice(handIndex, 1);
+        }
+        
+        // 加入消耗堆（不再进入弃牌堆）
+        GameState.player.exhaustPile.push(card);
+        
+    } else if (card.returnAfterBattle) {
+        // 战斗后返回的道具 - 临时移除
+        ItemManager.battleRemovedItems.push(card.id);
+        ItemManager.usedSpecialItems.push(card.id);
+        console.log(`道具 ${card.name} 将在战斗后返回`);
+        
+        // 从手牌移到消耗堆（战斗结束后返回牌组）
+        const handIndex = GameState.player.hand.findIndex(c => c.id === card.id);
+        if (handIndex >= 0) {
+            GameState.player.hand.splice(handIndex, 1);
+        }
+        GameState.player.exhaustPile.push(card);
+    }
+}
+
 // 对敌人造成伤害
 function dealDamageToEnemy(baseDamage, attackType, options = {}) {
     let damage = baseDamage;
+    
+    // 应用敌人脆弱效果
+    if (GameState.battle.enemy.vulnerable && GameState.battle.enemy.vulnerable > 0) {
+        damage = Math.floor(damage * (1 + GameState.battle.enemy.vulnerable * 0.25));
+    }
+    
+    // 应用敌人削弱效果
+    if (GameState.battle.enemy.weakened && GameState.battle.enemy.weakened > 0) {
+        // 敌人造成的伤害减少（这个效果在敌人攻击时处理）
+    }
+    
+    // 获取遗物加成
+    if (typeof RelicManager !== 'undefined' && typeof RelicManager.getTypeDamageBonus === 'function') {
+        const typeBonus = RelicManager.getTypeDamageBonus(attackType);
+        if (typeBonus > 0) {
+            damage = Math.floor(damage * (1 + typeBonus));
+        }
+        
+        // 效果拔群加成
+        const enemy = GameState.battle.enemy;
+        if (enemy.types && typeof RelicManager.hasRelic === 'function') {
+            const effectiveness = getTypeEffectiveness(attackType, enemy.types);
+            if (effectiveness > 1 && RelicManager.hasRelic('expert-belt')) {
+                damage = Math.floor(damage * (1 + 0.25));
+            }
+        }
+    }
 
     // 计算属性克制
     if (attackType && attackType !== 'normal' && GameState.battle.enemy.types) {
         const effectiveness = getTypeEffectiveness(attackType, GameState.battle.enemy.types);
-        damage = Math.floor(damage * effectiveness);
+        
+        console.log(`属性克制计算: ${attackType} vs ${GameState.battle.enemy.types.join(',')} = ${effectiveness}倍`);
+        
+        // 冠军徽章加成
+        let effectivenessMultiplier = effectiveness;
+        if (typeof RelicManager !== 'undefined' && typeof RelicManager.hasRelic === 'function' && RelicManager.hasRelic('champion-badge')) {
+            effectivenessMultiplier = Math.min(2.5, effectiveness * 1.25);
+        }
+        
+        damage = Math.floor(damage * effectivenessMultiplier);
 
         if (effectiveness > 1) {
             showMessage('效果拔群!');
@@ -325,8 +771,20 @@ function dealDamageToEnemy(baseDamage, attackType, options = {}) {
     }
 
     // 暴击检查
-    if (options.critChance && Math.random() < options.critChance) {
-        damage = Math.floor(damage * 1.5);
+    let critChance = options.critChance || 0;
+    
+    // 遗物暴击加成
+    if (typeof RelicManager !== 'undefined' && typeof RelicManager.getCritChanceBonus === 'function') {
+        critChance += RelicManager.getCritChanceBonus();
+    }
+    
+    let critMultiplier = 1.5;
+    if (typeof RelicManager !== 'undefined' && typeof RelicManager.getCritDamageBonus === 'function') {
+        critMultiplier += RelicManager.getCritDamageBonus();
+    }
+    
+    if (critChance > 0 && Math.random() < critChance) {
+        damage = Math.floor(damage * critMultiplier);
         showMessage('暴击!');
     }
 
@@ -356,6 +814,12 @@ function dealDamageToEnemy(baseDamage, attackType, options = {}) {
 
     // 检查进化触发
     checkEvolutionTrigger('damage', actualDamage);
+    
+    // 更新UI
+    updateBattleUI();
+    
+    // 检查战斗是否结束
+    setTimeout(() => checkBattleEnd(), 100);
 }
 
 // 对玩家造成伤害
@@ -364,6 +828,26 @@ function dealDamageToPlayer(damage) {
     damage = Math.max(0, damage);
 
     let actualDamage = damage;
+
+    // 检查闪避
+    const evasionChance = getEvasionBonus('player');
+    if (evasionChance > 0 && Math.random() < evasionChance) {
+        showMessage('闪避成功！');
+        showDamageNumber(0, 'miss', 'player');
+        return;
+    }
+
+    // 检查无敌状态
+    if (GameState.player.invulnerable && GameState.player.invulnerable > 0) {
+        showMessage('无敌状态，伤害无效！');
+        return;
+    }
+
+    // 检查虚无状态
+    if (GameState.player.untouchable && GameState.player.untouchable > 0) {
+        showMessage('虚无状态，无法被攻击！');
+        return;
+    }
 
     // 检查替身
     if (GameState.player.substitute > 0) {
@@ -390,9 +874,20 @@ function dealDamageToPlayer(damage) {
         }
     }
 
+    // 应用伤害减少效果
+    if (GameState.player.damageReduction && GameState.player.damageReduction > 0) {
+        actualDamage = Math.floor(actualDamage * (1 - GameState.player.damageReduction));
+    }
+
     if (actualDamage > 0) {
         GameState.player.hp -= actualDamage;
         GameState.stats.damageTaken += actualDamage;
+        
+        // 记录忍耐伤害
+        if (GameState.player.bideSetup && GameState.player.bideSetup.active) {
+            GameState.player.bideSetup.damageTaken += actualDamage;
+        }
+        
         animateSprite('player', 'hurt');
 
         // 确保HP不低于0
@@ -589,14 +1084,21 @@ function executeEnemyMove() {
 
 // 检查战斗结束
 function checkBattleEnd() {
+    const enemyHp = GameState.battle.enemy.currentHp;
+    const playerHp = GameState.player.hp;
+    
+    console.log('checkBattleEnd - 敌人HP:', enemyHp, '玩家HP:', playerHp);
+    
     // 检查敌人是否死亡
-    if (GameState.battle.enemy.currentHp <= 0) {
+    if (enemyHp <= 0) {
+        console.log('敌人死亡，调用 endBattle(true)');
         endBattle(true);
         return true;
     }
 
     // 检查玩家是否死亡
-    if (GameState.player.hp <= 0) {
+    if (playerHp <= 0) {
+        console.log('玩家死亡，调用 endBattle(false)');
         endBattle(false);
         return true;
     }
@@ -605,15 +1107,36 @@ function checkBattleEnd() {
 }
 
 // 结束战斗
+let battleEnded = false; // 防止重复调用
+
 function endBattle(victory) {
+    // 防止重复调用
+    if (battleEnded) {
+        console.log('战斗已结束，跳过重复调用');
+        return;
+    }
+    battleEnded = true;
+    
     console.log('=== endBattle 调用 ===');
     console.log('胜利:', victory);
-    console.log('敌人:', GameState.battle.enemy ? GameState.battle.enemy.name : 'null');
-    console.log('isBoss:', GameState.battle.enemy ? GameState.battle.enemy.isBoss : 'undefined');
-    console.log('====================');
+    
+    // 还原超进化状态（在道具管理器处理之前）
+    if (typeof ItemManager !== 'undefined' && typeof ItemManager.revertMegaEvolution === 'function') {
+        ItemManager.revertMegaEvolution();
+    }
+    
+    // 道具管理器处理战斗结束
+    if (typeof ItemManager !== 'undefined' && typeof ItemManager.onBattleEnd === 'function') {
+        ItemManager.onBattleEnd();
+    }
+    
+    // 遗物效果处理
+    if (typeof RelicManager !== 'undefined' && typeof RelicManager.onBattleEnd === 'function') {
+        RelicManager.onBattleEnd(victory);
+    }
     
     // 战斗结束时恢复自动使用的宝可梦牌
-    if (PokemonCardSystem.activePokemon) {
+    if (typeof PokemonCardSystem !== 'undefined' && PokemonCardSystem.activePokemon) {
         const activePokemonCard = PokemonCardSystem.activePokemon;
         
         // 检查宝可梦牌是否在抽牌堆中
@@ -636,6 +1159,44 @@ function endBattle(victory) {
     if (victory) {
         const enemy = GameState.battle.enemy;
         
+        // 更新宝可梦战斗胜利次数
+        const activePokemon = GameState.player.activePokemon || (typeof PokemonCardSystem !== 'undefined' ? PokemonCardSystem.activePokemon : null);
+        if (activePokemon && activePokemon.evolution) {
+            activePokemon.battleWins = (activePokemon.battleWins || 0) + 1;
+            
+            // 检查共享战斗经验的遗物
+            if (typeof RelicManager !== 'undefined' && typeof RelicManager.hasSharedBattleExp === 'function' && RelicManager.hasSharedBattleExp()) {
+                // 所有宝可梦都获得战斗经验
+                const pokemonCards = GameState.player.pokemonCards || [];
+                for (const card of pokemonCards) {
+                    if (card.pokemonData && card.pokemonData !== activePokemon) {
+                        card.pokemonData.battleWins = (card.pokemonData.battleWins || 0) + 1;
+                    }
+                }
+            }
+            
+            // 检查进化触发（战斗胜利触发）
+            if (activePokemon.evolution.trigger === 'battleWins') {
+                if (activePokemon.battleWins >= activePokemon.evolution.threshold) {
+                    showEvolutionChoice(activePokemon);
+                }
+            }
+            
+            // 增加亲密度
+            let friendshipGain = 3;
+            if (typeof RelicManager !== 'undefined' && typeof RelicManager.getFriendshipBonus === 'function') {
+                friendshipGain += RelicManager.getFriendshipBonus() * 3;
+            }
+            activePokemon.friendship = (activePokemon.friendship || 70) + friendshipGain;
+            
+            // 检查亲密度进化
+            if (activePokemon.evolution && activePokemon.evolution.trigger === 'friendship') {
+                if (activePokemon.friendship >= 220) {
+                    showEvolutionChoice(activePokemon);
+                }
+            }
+        }
+        
         // 检查是否是Boss（添加节点类型判断作为备选）
         const isBossNode = GameState.progress.currentNode && GameState.progress.currentNode.type === 'boss';
         const isBossEnemy = enemy.isBoss === true;
@@ -653,54 +1214,18 @@ function endBattle(victory) {
         if (isBossEnemy || isBossNode) {
             console.log('检测到Boss战斗胜利!');
             
-            // 通关当前层
-            GameState.stats.floorsCleared = GameState.progress.currentFloor;
-
-            if (GameState.progress.currentFloor >= GameState.progress.maxFloors) {
-                // 游戏胜利
-                console.log('游戏胜利！');
-                setTimeout(() => gameVictory(), 1500);
-                return;
-            } else {
-                // 进入下一层
-                console.log('准备进入下一层...');
-                GameState.progress.currentFloor++;
-                GameState.progress.currentNode = null;
-                GameState.progress.completedNodes = [];
-                
-                // 生成新地图
-                console.log('生成新地图，当前层:', GameState.progress.currentFloor);
-                const newMap = generateMap();
-                GameState.progress.map = newMap;
-                
-                // 确保第一层节点可用
-                if (newMap[0] && newMap[0][0]) {
-                    newMap[0][0].available = true;
-                    console.log('设置起点节点为可用状态');
-                }
-
-                // 恢复部分HP
-                const healAmount = Math.floor(GameState.player.maxHp * 0.2);
-                GameState.player.hp = Math.min(GameState.player.maxHp, GameState.player.hp + healAmount);
-                
-                console.log('恢复HP:', healAmount, '当前HP:', GameState.player.hp);
-
-                setTimeout(() => {
-                    console.log('显示地图界面');
-                    showScreen('map-screen');
-                    renderMap();
-                    updateUI();
-                    showMessage(`进入第 ${GameState.progress.currentFloor} 层! 恢复 ${healAmount} HP`);
-                }, 1500);
-                return;
-            }
+            // Boss掉落遗物选择
+            setTimeout(() => {
+                showRelicRewardScreen('boss');
+            }, 1500);
+            return;
         }
-
+        
         // 检查是否是精英
         if (enemy.isElite) {
-            // 精英战后可能获得更好的奖励
+            // 精英战显示遗物选择界面
             setTimeout(() => {
-                showRewardScreen(true);
+                showRelicRewardScreen('elite');
             }, 1500);
             return;
         }
@@ -712,6 +1237,181 @@ function endBattle(victory) {
     } else {
         setTimeout(() => gameOver(), 1000);
     }
+}
+
+// 显示进化选择对话框
+function showEvolutionChoice(pokemon) {
+    const evolution = getEvolutionPokemon(pokemon.id);
+    if (!evolution) return;
+    
+    const dialog = document.getElementById('evolution-dialog');
+    if (!dialog) {
+        // 简化处理，直接进化
+        performEvolution(pokemon, evolution);
+        return;
+    }
+    
+    // 填充进化前后数据
+    document.getElementById('evolution-before-name').textContent = pokemon.name;
+    document.getElementById('evolution-before-sprite').textContent = pokemon.sprite || '❓';
+    document.getElementById('evolution-before-stats').innerHTML = `
+        HP: ${pokemon.hp}/${pokemon.maxHp}<br>
+        物攻: ${pokemon.attack || 50} | 物防: ${pokemon.defense || 50}<br>
+        特攻: ${pokemon.spAttack || 50} | 特防: ${pokemon.spDefense || 50}
+    `;
+    
+    document.getElementById('evolution-after-name').textContent = evolution.name;
+    document.getElementById('evolution-after-sprite').textContent = evolution.sprite || '❓';
+    document.getElementById('evolution-after-stats').innerHTML = `
+        HP: <span class="${evolution.hp > pokemon.maxHp ? 'stat-up' : ''}">${evolution.hp}</span><br>
+        物攻: <span class="${evolution.attack > (pokemon.attack || 50) ? 'stat-up' : ''}">${evolution.attack || 50}</span> | 
+        物防: <span class="${evolution.defense > (pokemon.defense || 50) ? 'stat-up' : ''}">${evolution.defense || 50}</span><br>
+        特攻: <span class="${evolution.spAttack > (pokemon.spAttack || 50) ? 'stat-up' : ''}">${evolution.spAttack || 50}</span> | 
+        特防: <span class="${evolution.spDefense > (pokemon.spDefense || 50) ? 'stat-up' : ''}">${evolution.spDefense || 50}</span>
+    `;
+    
+    // 显示对话框
+    dialog.style.display = 'flex';
+    
+    // 绑定按钮事件
+    const confirmBtn = document.getElementById('evolution-confirm-btn');
+    const skipBtn = document.getElementById('evolution-skip-btn');
+    const neverBtn = document.getElementById('evolution-never-btn');
+    
+    const handleConfirm = () => {
+        dialog.style.display = 'none';
+        performEvolution(pokemon, evolution);
+        cleanup();
+    };
+    
+    const handleSkip = () => {
+        dialog.style.display = 'none';
+        showMessage(`${pokemon.name} 此次不进化`);
+        cleanup();
+    };
+    
+    const handleNever = () => {
+        dialog.style.display = 'none';
+        pokemon.neverEvolve = true;
+        showMessage(`${pokemon.name} 将永远不再进化`);
+        cleanup();
+    };
+    
+    const cleanup = () => {
+        confirmBtn.removeEventListener('click', handleConfirm);
+        skipBtn.removeEventListener('click', handleSkip);
+        neverBtn.removeEventListener('click', handleNever);
+    };
+    
+    confirmBtn.addEventListener('click', handleConfirm);
+    skipBtn.addEventListener('click', handleSkip);
+    neverBtn.addEventListener('click', handleNever);
+}
+
+// 执行进化
+function performEvolution(currentPokemon, newPokemon) {
+    showMessage(`${currentPokemon.name} 正在进化!`);
+
+    setTimeout(() => {
+        // 更新玩家宝可梦
+        const hpRatio = currentPokemon.hp / currentPokemon.maxHp;
+        newPokemon.hp = Math.ceil(newPokemon.hp * hpRatio);
+        newPokemon.battleWins = 0;
+        newPokemon.evolutionProgress = 0;
+        newPokemon.friendship = currentPokemon.friendship || 70;
+        newPokemon.statusEffects = currentPokemon.statusEffects ? [...currentPokemon.statusEffects] : [];
+        
+        GameState.player.activePokemon = newPokemon;
+        if (typeof PokemonCardSystem !== 'undefined' && PokemonCardSystem.activePokemon) {
+            PokemonCardSystem.activePokemon = newPokemon;
+        }
+        
+        // 更新HP上限
+        GameState.player.maxHp = newPokemon.hp;
+        GameState.player.hp = newPokemon.hp;
+
+        // 添加进化后的技能卡牌
+        if (newPokemon.skills && newPokemon.skills.length > 0) {
+            const skillCard = createSkillCard(newPokemon.skills[0], newPokemon);
+            if (skillCard) {
+                GameState.player.deck.push(skillCard);
+                showMessage(`${newPokemon.name} 学会了 ${skillCard.name}!`);
+            }
+        }
+
+        // 播放进化效果
+        animateEvolution();
+
+        // 更新UI
+        updateBattleUI();
+        updateEvolutionProgressUI();
+
+        showMessage(`恭喜! ${currentPokemon.name} 进化成了 ${newPokemon.name}!`);
+    }, 1000);
+}
+
+// 更新进化进度UI
+function updateEvolutionProgressUI() {
+    const container = document.getElementById('evolution-progress-container');
+    const barFill = document.getElementById('evolution-bar-fill');
+    const progressText = document.getElementById('evolution-progress-text');
+    
+    const activePokemon = GameState.player.activePokemon || (typeof PokemonCardSystem !== 'undefined' ? PokemonCardSystem.activePokemon : null);
+    
+    if (!activePokemon || !activePokemon.evolution || activePokemon.neverEvolve) {
+        if (container) container.style.display = 'none';
+        return;
+    }
+    
+    if (container) container.style.display = 'block';
+    
+    const evolution = activePokemon.evolution;
+    let progress = 0;
+    let progressText_str = '';
+    
+    switch (evolution.trigger) {
+        case 'battleWins':
+            progress = (activePokemon.battleWins || 0) / evolution.threshold * 100;
+            progressText_str = `战斗胜利: ${activePokemon.battleWins || 0}/${evolution.threshold}`;
+            break;
+        case 'friendship':
+            progress = (activePokemon.friendship || 0) / 220 * 100;
+            progressText_str = `亲密度: ${activePokemon.friendship || 0}/220`;
+            break;
+        case 'item':
+            if (evolution.requiredItem) {
+                progressText_str = `需要道具: ${getItemName(evolution.requiredItem)}`;
+                progress = 0;
+            }
+            break;
+        default:
+            progress = (activePokemon.evolutionProgress || 0) / evolution.threshold * 100;
+            progressText_str = `进度: ${activePokemon.evolutionProgress || 0}/${evolution.threshold}`;
+    }
+    
+    if (barFill) barFill.style.width = Math.min(100, progress) + '%';
+    if (progressText) progressText.textContent = progressText_str;
+    
+    // 进化就绪时高亮
+    if (progress >= 100) {
+        if (container) {
+            container.style.border = '2px solid #ffd700';
+            container.style.animation = 'pulse 1s ease infinite';
+        }
+    }
+}
+
+// 获取道具名称
+function getItemName(itemId) {
+    const itemNames = {
+        'thunder-stone': '雷之石',
+        'fire-stone': '火之石',
+        'water-stone': '水之石',
+        'moon-stone': '月之石',
+        'sun-stone': '日之石',
+        'leaf-stone': '叶之石'
+    };
+    return itemNames[itemId] || itemId;
 }
 
 // 显示伤害数字
@@ -864,4 +1564,144 @@ function animateEvolution() {
     setTimeout(() => {
         playerSprite.style.animation = '';
     }, 1000);
+}
+
+// ====== 能力提升系统 ======
+const STAT_STAGES = {
+    attack: { name: '物攻', multiplier: [1, 1.5, 2, 2.5, 3, 3.5, 4] },
+    defense: { name: '物防', multiplier: [1, 1.5, 2, 2.5, 3, 3.5, 4] },
+    spAttack: { name: '特攻', multiplier: [1, 1.5, 2, 2.5, 3, 3.5, 4] },
+    spDefense: { name: '特防', multiplier: [1, 1.5, 2, 2.5, 3, 3.5, 4] },
+    speed: { name: '速度', multiplier: [1, 1.5, 2, 2.5, 3, 3.5, 4] },
+    critRate: { name: '暴击率', bonus: [0, 0.0625, 0.125, 0.25, 0.375, 0.5, 0.625] },
+    evasion: { name: '闪避率', bonus: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6] }
+};
+
+// 初始化能力等级
+function initStatStages() {
+    if (!GameState.player.statStages) {
+        GameState.player.statStages = {
+            attack: 0, defense: 0, spAttack: 0, spDefense: 0,
+            speed: 0, critRate: 0, evasion: 0
+        };
+    }
+    if (!GameState.battle.enemy.statStages) {
+        GameState.battle.enemy.statStages = {
+            attack: 0, defense: 0, spAttack: 0, spDefense: 0,
+            speed: 0, critRate: 0, evasion: 0
+        };
+    }
+}
+
+// 应用能力提升
+function applyStatBoost(stat, stages, target = 'player') {
+    initStatStages();
+    
+    const targetStats = target === 'player' ? GameState.player.statStages : GameState.battle.enemy.statStages;
+    const oldValue = targetStats[stat] || 0;
+    targetStats[stat] = Math.min(6, (targetStats[stat] || 0) + stages);
+    
+    const statName = STAT_STAGES[stat] ? STAT_STAGES[stat].name : stat;
+    const newValue = targetStats[stat];
+    
+    if (newValue > oldValue) {
+        showMessage(`${statName}提升${stages}级！(${oldValue}→${newValue})`);
+    }
+    
+    updateBattleUI();
+}
+
+// 应用能力下降
+function applyStatDrop(stat, stages, target = 'enemy') {
+    initStatStages();
+    
+    const targetStats = target === 'player' ? GameState.player.statStages : GameState.battle.enemy.statStages;
+    const oldValue = targetStats[stat] || 0;
+    targetStats[stat] = Math.max(-6, (targetStats[stat] || 0) - stages);
+    
+    const statName = STAT_STAGES[stat] ? STAT_STAGES[stat].name : stat;
+    const newValue = targetStats[stat];
+    
+    if (newValue < oldValue) {
+        showMessage(`${target === 'player' ? '你的' : '敌人的'}${statName}下降${stages}级！`);
+    }
+    
+    updateBattleUI();
+}
+
+// 获取能力倍率
+function getStatMultiplier(stat, target = 'player') {
+    initStatStages();
+    
+    const targetStats = target === 'player' ? GameState.player.statStages : GameState.battle.enemy.statStages;
+    const stage = targetStats[stat] || 0;
+    
+    if (stage >= 0) {
+        return STAT_STAGES[stat].multiplier[Math.min(6, stage)];
+    } else {
+        // 负数等级：倍率降低
+        return 1 / STAT_STAGES[stat].multiplier[Math.min(6, -stage)];
+    }
+}
+
+// 获取暴击率加成
+function getCritRateBonus(target = 'player') {
+    initStatStages();
+    
+    const targetStats = target === 'player' ? GameState.player.statStages : GameState.battle.enemy.statStages;
+    const stage = Math.max(0, targetStats.critRate || 0);
+    
+    return STAT_STAGES.critRate.bonus[Math.min(6, stage)];
+}
+
+// 获取闪避率加成
+function getEvasionBonus(target = 'player') {
+    initStatStages();
+    
+    const targetStats = target === 'player' ? GameState.player.statStages : GameState.battle.enemy.statStages;
+    const stage = Math.max(0, targetStats.evasion || 0);
+    
+    return STAT_STAGES.evasion.bonus[Math.min(6, stage)];
+}
+
+// 执行伤害计算（提取为单独函数以支持连击）
+function executeDamageCalculation(effect, card) {
+    let damage = effect.value;
+    
+    // 应用能力等级加成
+    if (effect.skillType === 'physical' || !effect.skillType) {
+        damage = Math.floor(damage * getStatMultiplier('attack', 'player'));
+    } else if (effect.skillType === 'special') {
+        damage = Math.floor(damage * getStatMultiplier('spAttack', 'player'));
+    }
+    
+    // 应用伤害加成
+    if (GameState.player.damageBonus > 0) {
+        damage += GameState.player.damageBonus;
+    }
+    
+    // 宝可梦属性加成
+    const activePokemon = GameState.player.activePokemon;
+    if (activePokemon) {
+        const skillType = effect.skillType || 'physical';
+        if (skillType === 'physical') {
+            const attackStat = activePokemon.attack || 50;
+            damage = Math.floor(damage * (attackStat / 50));
+        } else if (skillType === 'special') {
+            const spAttackStat = activePokemon.spAttack || 50;
+            damage = Math.floor(damage * (spAttackStat / 50));
+        }
+        
+        // 本系加成
+        const attackType = effect.attackType || card.pokemonType;
+        if (attackType && activePokemon.types && activePokemon.types.includes(attackType)) {
+            damage = Math.floor(damage * 1.5);
+        }
+    }
+    
+    // 获取攻击属性（优先使用effect.attackType，否则使用card.pokemonType）
+    const attackType = effect.attackType || card.pokemonType || 'normal';
+    
+    dealDamageToEnemy(damage, attackType, effect);
+    return damage;
 }
